@@ -49,10 +49,10 @@ embedding_types: List[TokenEmbeddings] = [
     # BertEmbeddings('bert-base-french')
 
     # CCASS Flair Embeddings FWD
-    FlairEmbeddings('/data/embeddings_CCASS/pavel/flair_language_model/jurinet/best-lm.pt'),
+    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
 
     # CCASS Flair Embeddings BWD
-    FlairEmbeddings('/data/embeddings_CCASS/pavel/flair_language_model/jurinet/best-lm-backward.pt')
+    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
 ]
 
 embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
