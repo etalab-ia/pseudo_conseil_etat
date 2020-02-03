@@ -106,4 +106,4 @@ venv.bak/
 .mypy_cache/
 anonymisation_software/
 /data
-./idea
+.idea/
