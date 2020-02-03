@@ -103,6 +103,6 @@ if __name__ == '__main__':
     else:
         job_output = Parallel(n_jobs=10)(
             delayed(save_decision_xml)(annotation_xml_path, documents_folder=documents_folder)
-            for annotation_xml_path in df_decisions.itertuples())
+            for annotation_xml_path in tqdm(list(df_decisions.itertuples())))
     logger.info(f"{sum(job_output)} XML files were extracted and saved. {len(job_output) - sum(job_output)} files "
                  f"were not found or some error happened.")

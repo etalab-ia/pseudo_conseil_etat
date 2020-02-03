@@ -82,7 +82,7 @@ def split_sets(sample_paths, proportion):
 
 
 def save_datasets(train, dev, test, train_dev_test_folder):
-    for name, dataset in {"train": train, "dev": dev, "test": test}.items():
+    for name, dataset in {"train/": train, "dev/": dev, "test/": test}.items():
         for path in dataset:
             subprocess.run(["cp", path, os.path.join(train_dev_test_folder, name)])
 
@@ -91,9 +91,9 @@ if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     tagged_file_path = parser.conll_folder
     n_jobs = parser.cores
-    number_decisions = 3000
+    number_decisions = 10000
     train_dev_test_folder = parser.train_dev_test_folder
-
+    seed(42)
 
     annotation_conll_paths = glob.glob(tagged_file_path + "**/*_CoNLL.txt", recursive=True)
     if number_decisions:
@@ -101,6 +101,6 @@ if __name__ == '__main__':
 
     file_tag_counts, tag_file_counts, counts = count_tags(annotation_conll_paths)
     print(counts)
-    sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", 625))
+    sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", 3000))
     train, dev, test = split_sets(sample_paths, (.80, .10, .10))
     save_datasets(train, dev, test, train_dev_test_folder)
