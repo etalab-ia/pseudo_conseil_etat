@@ -20,17 +20,17 @@ from argopt import argopt
 from joblib import Parallel, delayed
 from sacremoses import MosesTokenizer
 from tqdm import tqdm
-import multiprocessing_logging
 
-logger = logging.getLogger('xml2conll')
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(f'./logs/xml2conll.log', mode='w')
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(funcName)s:\t%(message)s")
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-multiprocessing_logging.install_mp_handler(logger)
+try:
+    logger = logging.getLogger('xml2conll')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(f'./logs/xml2conll.log', mode='w')
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(funcName)s:\t%(message)s")
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+except:
+    print("No logger available.")
 
 TAGS_DICT = {"Nom": "PER_NOM", "Prenom": "PER_PRENOM", "Adresse": "LOC", "O": "O"}
 
@@ -165,17 +165,29 @@ def tokenize(phrase):
     tokens = [t for t in tokens if t]
     return tokens
 
-def find_sub_list(sl,l):
+
+def find_sub_list(sl, l, start_position):
     """
     Super copy&paste from SO: https://stackoverflow.com/questions/17870544/find-starting-and-ending-indices-of-sublist-in-list
     :param sl:
     :param l:
     :return:
     """
-    sll=len(sl)
-    for ind in (i for i,e in enumerate(l) if e==sl[0]):
-        if l[ind:ind+sll]==sl:
-            return ind,ind+sll-1
+
+    def check_if_sublist_in_list(sl, l):
+        if len(sl) != len(l):
+            return False
+        for index in range(len(sl)):
+            if not sl[index] in l[index]:
+                return False
+        return True
+
+    sll = len(sl)
+    for ind in (i for i, e in enumerate(l[start_position:], start_position) if sl[0] in e):
+        # if l[ind:ind+sll]==sl:
+        if check_if_sublist_in_list(sl, l[ind:ind + sll]):
+            return ind, ind + sll - 1
+    return None
 
 
 def find_index(list_tokens, start_position, replacement_token):
@@ -203,7 +215,7 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
         # start_position, debug_list = find_index(tokens, start_position_id, replacement_tokenenized[0])
         # end_position = start_position + len(replacement_tokenenized)
 
-        start_position, end_position = find_sub_list(replacement_tokenenized, tokens)
+        start_position, end_position = find_sub_list(replacement_tokenenized, tokens, start_position_id)
         end_position += 1
 
         if start_position < 0:
@@ -502,8 +514,8 @@ if __name__ == '__main__':
     n_jobs = parser.cores
 
     # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
-    annotation_xml_paths = ["/data/conseil_etat/decisions/manuel/in/25921/0902127.xml"]
-    # annotation_xml_paths = glob.glob(tagged_folder_path + "**/*.xml", recursive=True)
+    # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
+    annotation_xml_paths = glob.glob(tagged_folder_path + "**/*.xml", recursive=True)
     if n_jobs < 2:
         job_output = []
         for annotation_xml_path in tqdm(annotation_xml_paths):
