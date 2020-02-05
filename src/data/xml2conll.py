@@ -138,12 +138,8 @@ def get_tagged_sequences(file_info):
 def get_per_line_replacements(tagged_sequences, sort_lines=False, zero_index=False):
     per_line_dict = defaultdict(list)
     for tag_tok in tagged_sequences:
-        if zero_index:
-            key = int(tag_tok["line"]) - 1
-        else:
-            key = int(tag_tok["line"])
-
-        per_line_dict[key].append(tag_tok)
+        line = int(tag_tok["line"])
+        per_line_dict[line].append(tag_tok)
     # sort line replacements by position
     for line_nb, replacements in per_line_dict.items():
         sorted_replacements = sorted(replacements, key=lambda x: int(x["position"]))
@@ -169,6 +165,18 @@ def tokenize(phrase):
     tokens = [t for t in tokens if t]
     return tokens
 
+def find_sub_list(sl,l):
+    """
+    Super copy&paste from SO: https://stackoverflow.com/questions/17870544/find-starting-and-ending-indices-of-sublist-in-list
+    :param sl:
+    :param l:
+    :return:
+    """
+    sll=len(sl)
+    for ind in (i for i,e in enumerate(l) if e==sl[0]):
+        if l[ind:ind+sll]==sl:
+            return ind,ind+sll-1
+
 
 def find_index(list_tokens, start_position, replacement_token):
     if not list_tokens:
@@ -192,8 +200,12 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
     for line_id, replacement in enumerate(line_replacements):
         replacement_tokenenized = moses_tokenize(replacement["token"])
 
-        start_position, debug_list = find_index(tokens, start_position_id, replacement_tokenenized[0])
-        end_position = start_position + len(replacement_tokenenized)
+        # start_position, debug_list = find_index(tokens, start_position_id, replacement_tokenenized[0])
+        # end_position = start_position + len(replacement_tokenenized)
+
+        start_position, end_position = find_sub_list(replacement_tokenenized, tokens)
+        end_position += 1
+
         if start_position < 0:
             logger.error(f"Could not find {debug_list} in phrase tokens {tokens[start_position_id:]}")
             return None, None
@@ -248,7 +260,6 @@ def load_annotation(file_path, count_differing_annotations=False):
             if different_tags:
                 logger.warning(f"File {file_path} has different tags for the same entity. {different_tags}")
 
-
         return per_line_tagged_sequence, error
     except Exception as e:
         error = f"Invalid XML file {file_path}: " + str(e)
@@ -285,7 +296,7 @@ def get_decision_tokens_tags(lines, annotations_per_line, file_treated):
 def tags_to_bio(all_tags):
     new_tags = []
     # for seq in all_tags:
-        # new_tags.append([TAGS_DICT[t] for t in seq])
+    # new_tags.append([TAGS_DICT[t] for t in seq])
     for seq in all_tags:
         for i, tag in enumerate(seq):
 
@@ -411,7 +422,7 @@ def find_reason_alignment_fail(per_line_tagged_entity: dict, text_lines: list):
         found_in_text = len(re.findall(r"\b{}(?!\w)".format(re.escape(entity)), text))
         if found_in_text != count:
             reason = ("4", f"Missing an instance of entity '{entity}' in the XML file. "
-            f"A name/address was not properly pseudonymized.")
+                           f"A name/address was not properly pseudonymized.")
             return reason
 
     clean_per_line_entities, seen_nested, nested_entities = remove_nested_xml_entities(
@@ -491,8 +502,8 @@ if __name__ == '__main__':
     n_jobs = parser.cores
 
     # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
-    # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA59/2013/20131127/13DA01033.xml"]
-    annotation_xml_paths = glob.glob(tagged_folder_path + "**/*.xml", recursive=True)
+    annotation_xml_paths = ["/data/conseil_etat/decisions/manuel/in/25921/0902127.xml"]
+    # annotation_xml_paths = glob.glob(tagged_folder_path + "**/*.xml", recursive=True)
     if n_jobs < 2:
         job_output = []
         for annotation_xml_path in tqdm(annotation_xml_paths):
