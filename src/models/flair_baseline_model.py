@@ -49,10 +49,10 @@ embedding_types: List[TokenEmbeddings] = [
     # BertEmbeddings('bert-base-french')
 
     # CCASS Flair Embeddings FWD
-    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
+    # FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
 
     # CCASS Flair Embeddings BWD
-    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
+    # FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
 ]
 
 embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
@@ -74,8 +74,9 @@ trainer.num_workers = 20
 # 7. start training
 trainer.train('models/baseline_ner',
               learning_rate=0.1,
-              mini_batch_size=32,
-              max_epochs=150)
+              mini_batch_size=2 ,
+              max_epochs=150,
+              embeddings_storage_mode="cpu")
 
 # 8. plot weight traces (optional)
 from flair.visual.training_curves import Plotter
