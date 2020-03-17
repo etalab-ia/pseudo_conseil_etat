@@ -1,6 +1,6 @@
 from flair.data import Corpus
-from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings, CharacterEmbeddings, FlairEmbeddings, \
-    BertEmbeddings
+from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings, CharacterEmbeddings, FlairEmbeddings,\
+    CamembertEmbeddings, BertEmbeddings
 from typing import List
 
 
@@ -20,7 +20,7 @@ def create_flair_corpus(data_folder):
     return corpus
 
 # 1. get the corpus
-data_folder = '/data/conseil_etat/train_dev_test/'
+data_folder = '/data/conseil_etat/train_dev_test/orig'
 
 corpus: Corpus = create_flair_corpus(data_folder)
 print(corpus)
@@ -47,7 +47,7 @@ embedding_types: List[TokenEmbeddings] = [
 
     # bert embeddings
     # BertEmbeddings('bert-base-french')
-
+    # CamembertEmbeddings()
     # CCASS Flair Embeddings FWD
     # FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
 
@@ -60,22 +60,24 @@ embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
 # 5. initialize sequence tagger
 from flair.models import SequenceTagger
 
-tagger: SequenceTagger = SequenceTagger(hidden_size=256,
+tagger: SequenceTagger = SequenceTagger(hidden_size=100,
                                         embeddings=embeddings,
                                         tag_dictionary=tag_dictionary,
                                         tag_type=tag_type,
-                                        use_crf=True)
+                                        rnn_layers=1,
+                                        use_crf=True,
+                                        )
 
 # 6. initialize trainer
 from flair.trainers import ModelTrainer
 
 trainer: ModelTrainer = ModelTrainer(tagger, corpus)
-trainer.num_workers = 20
+trainer.num_workers = 8
 # 7. start training
 trainer.train('models/baseline_ner',
               learning_rate=0.1,
-              mini_batch_size=2 ,
-              max_epochs=150,
+              mini_batch_size=16,
+              max_epochs=5,
               embeddings_storage_mode="cpu")
 
 # 8. plot weight traces (optional)
