@@ -13,7 +13,9 @@ import numpy as np
 np.random.seed(0)
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
+import flair
 
+flair.cache_root = "cache/"
 
 def create_flair_corpus(data_folder):
     # define columns
@@ -27,7 +29,7 @@ def create_flair_corpus(data_folder):
     return corpus
 
 # 1. get the corpus
-data_folder = '/data/conseil_etat/train_dev_test/69_8_10/'
+data_folder = '/gpfswork/rech/elz/uzf35gs/pseudo_conseil_etat/data/69_8_10/'
 
 corpus: Corpus = create_flair_corpus(data_folder)
 print(corpus)
