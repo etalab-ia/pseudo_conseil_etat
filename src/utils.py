@@ -14,9 +14,8 @@ class Monitor(Thread):
 
     def run(self):
         while not self.stopped:
+            print()
             GPUtil.showUtilization(all=True)
-            print()
-            print()
             print(f"CPU usage (mean %): {process.cpu_percent()}")
             print(f"System RAM usage (Gb): {process.memory_info()[0]/1e6}")
             print()
