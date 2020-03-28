@@ -40,7 +40,7 @@ if __name__ == '__main__':
     else:
         doc_paths = glob(doc_files_path + "/**/*.doc", recursive=True)
     if not doc_paths:
-        raise Exception("Path not found")
+        raise Exception(f"Path {doc_paths} not found")
 
     if convert_missing:
         transformed_docs_ids = [p[:-4] for p in glob(doc_files_path + "**/*.txt", recursive=True)]

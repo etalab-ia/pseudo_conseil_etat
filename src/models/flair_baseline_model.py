@@ -1,9 +1,16 @@
 from flair.data import Corpus
-from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings, CharacterEmbeddings, FlairEmbeddings,\
-    CamembertEmbeddings, BertEmbeddings
+from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings, CharacterEmbeddings, FlairEmbeddings, \
+    CamembertEmbeddings, BertEmbeddings, PooledFlairEmbeddings
 from typing import List
+import torch
 
+from src.utils import Monitor
 
+torch.manual_seed(42)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+import numpy as np
+np.random.seed(0)
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 
@@ -20,7 +27,7 @@ def create_flair_corpus(data_folder):
     return corpus
 
 # 1. get the corpus
-data_folder = '/data/conseil_etat/train_dev_test/orig'
+data_folder = '/data/conseil_etat/train_dev_test/69_8_10/'
 
 corpus: Corpus = create_flair_corpus(data_folder)
 print(corpus)
@@ -36,17 +43,17 @@ print(tag_dictionary.idx2item)
 # 4. initialize embeddings
 embedding_types: List[TokenEmbeddings] = [
 
-    # WordEmbeddings('fr-crawl'),
+    WordEmbeddings('fr'),
 
     # comment in this line to use character embeddings
     # CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
-    FlairEmbeddings('fr-forward'),
+    # PooledFlairEmbeddings('fr-forward'),
     # FlairEmbeddings('fr-backward'),
 
     # bert embeddings
-    # BertEmbeddings('bert-base-french')
+    # BertEmbeddings('bert-base-multilingual-cased')
     # CamembertEmbeddings()
     # CCASS Flair Embeddings FWD
     # FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
@@ -54,7 +61,7 @@ embedding_types: List[TokenEmbeddings] = [
     # CCASS Flair Embeddings BWD
     # FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
 ]
-
+monitor = Monitor(50)
 embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
 
 # 5. initialize sequence tagger
@@ -76,11 +83,11 @@ trainer.num_workers = 8
 # 7. start training
 trainer.train('models/baseline_ner',
               learning_rate=0.1,
-              mini_batch_size=16,
+              mini_batch_size=8,
               max_epochs=5,
-              embeddings_storage_mode="cpu")
-
+              embeddings_storage_mode="gpu")
+monitor.stop()
 # 8. plot weight traces (optional)
-from flair.visual.training_curves import Plotter
-plotter = Plotter()
-plotter.plot_weights('models/baseline_ner/weights.txt')
+# from flair.visual.training_curves import Plotter
+# plotter = Plotter()
+# plotter.plot_weights('models/baseline_ner/weights.txt')

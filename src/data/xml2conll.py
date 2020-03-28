@@ -499,6 +499,7 @@ def run(annotation_xml_path):
     # save tokens and tags in a file
     with open(os.path.join(decision_folder, os.path.basename(annotation_xml_path)[:-4] + "_CoNLL.txt"),
               "w") as conll:
+        conll.write(f"-DOCSTART-\tO\n\n")
         for tokens, tags in zip(all_tokens, all_tags):
             for tok, tag in zip(tokens, tags):
                 conll.write(f"{tok}\t{str(tag)}\n")
@@ -515,7 +516,7 @@ if __name__ == '__main__':
 
     # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
     # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
-    annotation_xml_paths = glob.glob(tagged_folder_path + "**/*.xml", recursive=True)
+    annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
     if n_jobs < 2:
         job_output = []
         for annotation_xml_path in tqdm(annotation_xml_paths):

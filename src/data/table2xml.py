@@ -63,7 +63,7 @@ def save_decision_xml(df_row, documents_folder):
     annotations_xml = row[col2id["detail_anonymisation"]]
     doc_path = os.path.join(chosen_folder, source_path)
     # We check that the folder exists. No sense in having an annotation XML file without the decision .doc
-    if not os.path.exists(doc_path):
+    if not os.path.exists(doc_path) and not os.path.exists(doc_path[:-4] + ".txt"):
         logger.debug(f"File {doc_path} not found !!")
         return 0
     xml_path = os.path.join(chosen_folder, os.path.dirname(source_path), decision_file_id + ".xml")
