@@ -27,9 +27,10 @@ if __name__ == '__main__':
     tags_phrases = df_conll.tag.fillna("").values
     gps = (grp for nonempty, grp in groupby(tags_phrases, bool) if nonempty)
     all_lines = [list(g) for g in gps]
-    nb_phrases_wo_annotation = sum(1 for p in all_lines if all([True if i == "O" else Fa    lse for i in p]))
-
+    nb_phrases_wo_annotation = sum(1 for p in all_lines if all([True if i == "O" else False for i in p]))
+    tags_ratio = tags[1:] * 100 / tags[1:].sum()
     pd.set_option('display.max_colwidth', 100)
     results = pd.Series({"nb_decisions": nb_decisions, "tags_distribution": str(tags.to_dict()),
+                         "BOI_tags_ratio": str(tags_ratio.to_dict()),
                          "nb_phrases": approx_nb_phrases, "nb_phrases_without_entities": nb_phrases_wo_annotation})
     print(results)

@@ -14,6 +14,11 @@ np.random.seed(0)
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 import flair
+import sys
+
+if len(sys.argv) < 2:
+    print("Usage: Pleas give the name of the folder containing the train, dev, test sets.")
+
 
 flair.cache_root = "cache/"
 

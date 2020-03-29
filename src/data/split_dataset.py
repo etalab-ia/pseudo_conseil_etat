@@ -10,11 +10,15 @@ B-LOC: 4616
 
 
 Usage:
-    split_dataset.py <conll_folder> <train_dev_test_folder>
+    split_dataset.py <conll_folder> <train_dev_test_folder> [options]
 
 Arguments:
     <conll_folder>                     Folder path with the CoNLL annotation files
     <train_dev_test_folder>            Folder path with the CoNLL annotation files splitted
+    --nb_min_class=<t> STRAT           Stratify the dataset. If zero, generate random sample [default: 3000: int]
+    --number_decisions=<n> DEC         Number of decisions to use [default: 10000: int]
+    --split_ratio=<s> RATIO            Split ratio of the generated traon,dev,test dataset [default: "80,10,10":str]
+
 '''
 import glob
 import logging
@@ -75,19 +79,28 @@ def concatenate_files(path_to_files, dataset_name):
 
 
 def get_min_class_samples(tag_file_counts, min_class_count=("B-LOC", 500)):
+    """
+    Function that chooses files continuously until the minimum for the selected class is reached (min_min_class_count)
+
+    :param tag_file_counts:
+    :param min_class_count:
+    :return:
+    """
     min_sample = []
     sum_min_tags = 0
     min_class_files = tag_file_counts[min_class_count[0]]
-    min_class_files = min_class_files
     i = 0
 
     while sum_min_tags < min_class_count[1]:
-
+        if i >= len(min_class_files):
+            print(f"All the files containing the minority tags are already added and we have {sum_min_tags}. "
+                  f"There are no more files with this tag.")
+            break
         min_sample.append(min_class_files[i][0])
         sum_min_tags += min_class_files[i][1]
         i += 1
     _, _, counts = count_tags(min_sample)
-    print(f"Tags distribution of min_class {min_class_count} sampled corpus documents) : {counts}")
+    print(f"Desired ags distribution of min_class {min_class_count}. Real sampled corpus documents : {counts}")
     return min_sample
 
 
@@ -117,18 +130,30 @@ def save_chosen_conlls(train, dev, test, train_dev_test_folder):
 if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     tagged_file_path = parser.conll_folder
-    number_decisions = 10000
     train_dev_test_folder = parser.train_dev_test_folder
+    split_ratio = [int(r) / 100 for r in parser.split_ratio.split(",")]
+    number_decisions = parser.number_decisions
+    nb_min_class = parser.nb_min_class
     seed(42)
 
     annotation_conll_paths = glob.glob(tagged_file_path + "/**/*_CoNLL.txt", recursive=True)
+
     if number_decisions:
-        annotation_conll_paths = sample(annotation_conll_paths, number_decisions)
+        if number_decisions < len(annotation_conll_paths):
+            annotation_conll_paths = sample(annotation_conll_paths, number_decisions)
+        else:
+            print("You chose to sample more documents that there are available. I am going to give you the whole"
+                  "population of documents.")
 
     file_tag_counts, tag_file_counts, counts = count_tags(annotation_conll_paths)
     print(f"Tags distribution of sampled corpus ({number_decisions} documents) : {counts}")
-    sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", 4057))
-    train, dev, test = split_sets(sample_paths, (.80, .10, .10))
+    
+    if nb_min_class:
+        sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", nb_min_class))
+    else:
+        sample_paths = list(file_tag_counts.keys())
+
+    train, dev, test = split_sets(sample_paths, split_ratio)
 
     new_dataset_path = train_dev_test_folder + f"/{len(train)}_{len(dev)}_{len(test)}"
     for dataset_name, dataset in {"train/": train, "dev/": dev, "test/": test}.items():
