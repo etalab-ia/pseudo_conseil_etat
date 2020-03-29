@@ -2,11 +2,6 @@
 Once the CoNLL files have been generated, split these files in train, validation and test. Trying to keep the
 distribution of tags stratified (same proportion in each split).
 
-In all the 24k CoNLL files, there is the following distribution of sequences (counting only the B-X tags, as I am
-interested in the sequence instead of the individual tokens count):
-B-PER_NOM : 286681
-B-PER_PRENOM: 59315
-B-LOC: 4616
 
 
 Usage:
@@ -15,19 +10,19 @@ Usage:
 Arguments:
     <conll_folder>                     Folder path with the CoNLL annotation files
     <train_dev_test_folder>            Folder path with the CoNLL annotation files splitted
-    --nb_min_class=<t> STRAT           Stratify the dataset. If zero, generate random sample [default: 3000: int]
+    --nb_min_class=<t> STRAT           Try to keep a min number of minoritary class in the dataset.
+                                       If zero, generate random sample [default: 3000: int]
     --number_decisions=<n> DEC         Number of decisions to use [default: 10000: int]
     --split_ratio=<s> RATIO            Split ratio of the generated traon,dev,test dataset [default: "80,10,10":str]
+    --skip_files_list=<z> SKIP         Skip the files inside the passed text file (one doc path per line) when creating the train set [default: None]
 
 '''
 import glob
-import logging
 import os
 import shutil
 import subprocess
 from collections import defaultdict
 from datetime import datetime
-
 
 import numpy as np
 from argopt import argopt
@@ -35,6 +30,7 @@ from random import sample, seed
 import re
 
 TAGS_DICT = [r"\sB-PER_NOM", r"\sB-PER_PRENOM", r"\sB-LOC"]
+
 
 def count_tags(conll_paths):
     # conll_paths = ["/data/conseil_etat/corpus_CoNLL/410885_CoNLL.txt"]
@@ -56,12 +52,15 @@ def count_tags(conll_paths):
     return file_tag_counts, tag_file_counts, totals_dict
 
 
-def concatenate_files2(list_files, path_new_file):
+def concatenate_files2(list_files, dir_path, new_file_path):
+    path_new_file = dir_path + f"/{new_file_path}.txt"
     with open(path_new_file, 'w') as outfile:
         for fname in list_files:
             with open(fname) as infile:
                 for line in infile:
                     outfile.write(line)
+    with open(dir_path + f"/{new_file_path}_used_docs.txt", "w") as outfile:
+        outfile.writelines([f"{l}\n" for l in list_files])
 
 
 def concatenate_files(path_to_files, dataset_name):
@@ -118,7 +117,6 @@ def split_sets(sample_paths, proportion):
 
 
 def save_chosen_conlls(train, dev, test, train_dev_test_folder):
-
     for dataset_name, dataset in {"train/": train, "dev/": dev, "test/": test}.items():
         set_folder_path = os.path.join(train_dev_test_folder, dataset_name)
         shutil.rmtree(set_folder_path, ignore_errors=True)
@@ -127,6 +125,7 @@ def save_chosen_conlls(train, dev, test, train_dev_test_folder):
             subprocess.run(["cp", path, os.path.join(train_dev_test_folder, dataset_name)])
         concatenate_files(os.path.join(train_dev_test_folder, dataset_name), dataset_name)
 
+
 if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     tagged_file_path = parser.conll_folder
@@ -134,10 +133,17 @@ if __name__ == '__main__':
     split_ratio = [int(r) / 100 for r in parser.split_ratio.split(",")]
     number_decisions = parser.number_decisions
     nb_min_class = parser.nb_min_class
-    seed(42)
+    skip_file = parser.skip_files_list
+    seed(0)
 
     annotation_conll_paths = glob.glob(tagged_file_path + "/**/*_CoNLL.txt", recursive=True)
-
+    print(f"Number of CoNLL read files: {len(annotation_conll_paths)}")
+    if skip_file and os.path.exists(skip_file):
+        with open(skip_file, "r") as readfile:
+            files_to_skip = [l.strip() for l in readfile.readlines()]
+        annotation_conll_paths = list(set(annotation_conll_paths).difference(files_to_skip))
+        print(f"After skipping the files in {skip_file} (with {len(files_to_skip)} files inside). "
+              f"We are left with {len(annotation_conll_paths)} documents.")
     if number_decisions:
         if number_decisions < len(annotation_conll_paths):
             annotation_conll_paths = sample(annotation_conll_paths, number_decisions)
@@ -147,7 +153,7 @@ if __name__ == '__main__':
 
     file_tag_counts, tag_file_counts, counts = count_tags(annotation_conll_paths)
     print(f"Tags distribution of sampled corpus ({number_decisions} documents) : {counts}")
-    
+
     if nb_min_class:
         sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", nb_min_class))
     else:
@@ -159,7 +165,7 @@ if __name__ == '__main__':
     for dataset_name, dataset in {"train/": train, "dev/": dev, "test/": test}.items():
         if not os.path.exists(new_dataset_path):
             os.mkdir(new_dataset_path)
-        concatenate_files2(dataset, new_dataset_path + f"/{dataset_name.rstrip('/')}.txt")
+        concatenate_files2(dataset, new_dataset_path, dataset_name.rstrip('/'))
         pass
 
 # save_chosen_conlls(train, dev, test, train_dev_test_folder)
