@@ -17,7 +17,7 @@ class Monitor(Thread):
             print()
             GPUtil.showUtilization(all=True)
             print(f"CPU usage (mean %): {process.cpu_percent()}")
-            print(f"System RAM usage (Gb): {process.memory_info()[0]/1e6}")
+            print(f"System RAM usage (Gb): {psutil._common.bytes2human(process.memory_info()[0])}")
             print()
             time.sleep(self.delay)
 
