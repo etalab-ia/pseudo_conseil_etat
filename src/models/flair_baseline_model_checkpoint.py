@@ -16,15 +16,16 @@ from flair.datasets import ColumnCorpus
 import flair
 import sys
 
-if len(sys.argv) < 4:
-    print("Usage: Pleas give the name of the folder containing the train, dev, test sets, the output folder, and"
-          "the checkpoint model path")
+if len(sys.argv) < 5:
+    print(sys.argv)
+    print("Usage: Pleas give the name of the folder containing the train, dev, test sets, the output folder,"
+          " the checkpoint model path, the number of epochs")
     exit(0)
 
 data_folder = sys.argv[1]
 output_folder = sys.argv[2]
 checkpoint_path = sys.argv[3]
-
+epochs = int(sys.argv[4])
 flair.cache_root = "cache/"
 
 def create_flair_corpus(data_folder):
@@ -56,13 +57,13 @@ print(tag_dictionary.idx2item)
 # 4. initialize embeddings
 embedding_types: List[TokenEmbeddings] = [
 
-    # WordEmbeddings('fr'),
+    WordEmbeddings('fr'),
 
     # comment in this line to use character embeddings
     # CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
-    FlairEmbeddings('fr-forward'),
+    # FlairEmbeddings('fr-forward'),
     # FlairEmbeddings('fr-backward'),
 
     # bert embeddings
@@ -98,7 +99,7 @@ trainer.num_workers = 8
 trainer.train(output_folder,
               learning_rate=0.1,
               mini_batch_size=8,
-              max_epochs=5,
+              max_epochs=epochs,
               embeddings_storage_mode="gpu")
 
 monitor.stop()
