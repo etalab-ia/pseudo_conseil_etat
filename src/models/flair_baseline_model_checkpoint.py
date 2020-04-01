@@ -91,9 +91,9 @@ tagger: SequenceTagger = SequenceTagger(hidden_size=100,
 
 # 6. initialize trainer
 from flair.trainers import ModelTrainer
-modelo = ModelTrainer.load_checkpoint(checkpoint_path, corpus)
+tagger.load(checkpoint_path)
 
-trainer: ModelTrainer = ModelTrainer(modelo, corpus)
+trainer: ModelTrainer = ModelTrainer(tagger, corpus)
 trainer.num_workers = 8
 # 7. start training
 trainer.train(output_folder,
