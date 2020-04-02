@@ -18,7 +18,7 @@ from collections import defaultdict, Counter
 import numpy as np
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer
+from sacremoses import MosesTokenizer, MosesPunctNormalizer
 from tqdm import tqdm
 
 try:
@@ -151,10 +151,12 @@ def get_per_line_replacements(tagged_sequences, sort_lines=False, zero_index=Fal
     return per_line_dict
 
 
+mpn = MosesPunctNormalizer()
 mt = MosesTokenizer(lang="fr")
 
 
 def moses_tokenize(phrase):
+    phrase = mpn.normalize(phrase)
     tokens = mt.tokenize(phrase)
     return tokens
 

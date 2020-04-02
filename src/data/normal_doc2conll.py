@@ -83,7 +83,7 @@ def run(annotated_txt_path):
 
     all_tokens = get_word_per_line(text_lines)
 
-    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_CoNLL.txt"),
+    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_TestCoNLL.txt"),
               "w") as conll:
         for tokens in all_tokens:
             for tok in tokens:

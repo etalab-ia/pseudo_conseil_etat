@@ -9,12 +9,12 @@ Usage:
 
 Arguments:
     <conll_folder>                     Folder path with the CoNLL annotation files
-    <train_dev_test_folder>            Folder path with the CoNLL annotation files splitted
-    --nb_min_class=<t> STRAT           Try to keep a min number of minoritary class in the dataset.
-                                       If zero, generate random sample [default: 3000: int]
-    --number_decisions=<n> DEC         Number of decisions to use [default: 10000: int]
+    <train_dev_test_folder>            Folder path to store the CoNLL created dataset
+    --nb_min_class=<t> MiNCLASS        Min number of examples of a given class : ex. "B-LOC,2000"
+                                       If zero, generate random sample (default: None)
+    --number_decisions=<n> DEC         Number of decisions to use (default: None)
     --split_ratio=<s> RATIO            Split ratio of the generated traon,dev,test dataset [default: "80,10,10":str]
-    --skip_files_list=<z> SKIP         Skip the files inside the passed text file (one doc path per line) when creating the train set [default: None]
+    --skip_files_list=<z> SKIP         Skip the files inside the passed text file (one doc path per line) when creating the train set (default: None)
 
 '''
 import glob
@@ -26,7 +26,7 @@ from datetime import datetime
 
 import numpy as np
 from argopt import argopt
-from random import sample, seed
+from random import sample, seed, shuffle
 import re
 
 TAGS_DICT = [r"\sB-PER_NOM", r"\sB-PER_PRENOM", r"\sB-LOC"]
@@ -85,12 +85,13 @@ def get_min_class_samples(tag_file_counts, min_class_count=("B-LOC", 500)):
     :param min_class_count:
     :return:
     """
+
     min_sample = []
     sum_min_tags = 0
     min_class_files = tag_file_counts[min_class_count[0]]
     i = 0
 
-    while sum_min_tags < min_class_count[1]:
+    while sum_min_tags < int(min_class_count[1]):
         if i >= len(min_class_files):
             print(f"All the files containing the minority tags are already added and we have {sum_min_tags}. "
                   f"There are no more files with this tag.")
@@ -131,8 +132,15 @@ if __name__ == '__main__':
     tagged_file_path = parser.conll_folder
     train_dev_test_folder = parser.train_dev_test_folder
     split_ratio = [int(r) / 100 for r in parser.split_ratio.split(",")]
-    number_decisions = parser.number_decisions
+
+    sampled_number_decisions = parser.number_decisions
+    if sampled_number_decisions:
+        nb_min_class = int(sampled_number_decisions)
+
     nb_min_class = parser.nb_min_class
+    if parser.nb_min_class:
+        nb_min_class = parser.nb_min_class.split(",")
+
     skip_file = parser.skip_files_list
     seed(0)
 
@@ -144,20 +152,24 @@ if __name__ == '__main__':
         annotation_conll_paths = list(set(annotation_conll_paths).difference(files_to_skip))
         print(f"After skipping the files in {skip_file} (with {len(files_to_skip)} files inside). "
               f"We are left with {len(annotation_conll_paths)} documents.")
-    if number_decisions:
-        if number_decisions < len(annotation_conll_paths):
-            annotation_conll_paths = sample(annotation_conll_paths, number_decisions)
-        else:
-            print("You chose to sample more documents that there are available. I am going to give you the whole"
-                  "population of documents.")
+
+    sample_paths = shuffle(annotation_conll_paths)
 
     file_tag_counts, tag_file_counts, counts = count_tags(annotation_conll_paths)
-    print(f"Tags distribution of sampled corpus ({number_decisions} documents) : {counts}")
+    print(f"Tags distribution of sampled corpus ({len(annotation_conll_paths)} documents) : {counts}")
 
-    if nb_min_class:
-        sample_paths = get_min_class_samples(tag_file_counts, ("B-LOC", nb_min_class))
-    else:
-        sample_paths = list(file_tag_counts.keys())
+
+    if sampled_number_decisions:
+        if sampled_number_decisions < len(annotation_conll_paths):
+            sample_paths = sample(annotation_conll_paths, sampled_number_decisions)
+
+        else:
+            print("You chose to sample more documents that there are available. I am going to give you the whole    "
+                  "population of documents.")
+
+    elif nb_min_class:
+        sample_paths = get_min_class_samples(tag_file_counts, nb_min_class)
+
 
     train, dev, test = split_sets(sample_paths, split_ratio)
 
@@ -167,5 +179,3 @@ if __name__ == '__main__':
             os.mkdir(new_dataset_path)
         concatenate_files2(dataset, new_dataset_path, dataset_name.rstrip('/'))
         pass
-
-# save_chosen_conlls(train, dev, test, train_dev_test_folder)
