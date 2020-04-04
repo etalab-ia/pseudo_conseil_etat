@@ -30,6 +30,7 @@ def print_results(y_true, y_pred):
 
     fscore = f1_score(y_true, y_pred)
     print(f"F-score (micro): {fscore:.2f}")
+    fscore_str = f"F-score (micro): {fscore:.2f}"
 
     cm = print_confusion_matrix(y_true=y_true, y_pred=y_pred,
                                 labels=["B-LOC", "I-LOC", "B-PER_NOM", "I-PER_NOM", "B-PER_PRENOM", "I-PER_PRENOM",
@@ -37,7 +38,7 @@ def print_results(y_true, y_pred):
                                 return_string=True)
     print(cm)
 
-    return classif_report, fscore, cm
+    return classif_report, fscore_str, cm
 
 
 def print_errors(results_df: pd.DataFrame, type_error=None, window="single", return_string=False):
