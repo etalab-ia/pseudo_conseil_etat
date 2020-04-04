@@ -1,13 +1,16 @@
-# Inspired on https://github.com/ELS-RD/anonymisation/blob/master/flair_display_errors.py
-'''Predicts and evaluates a CoNLL format file given a model
+'''Predicts a CoNLL format file given a model. Outputs the annotation in a new CoNLL file (with three columns:
+token, true_tag, predicted_tag
+Inspired on https://github.com/ELS-RD/anonymisation/blob/master/flair_display_errors.py
 
 Usage:
-    flair_predict_conll.py <model_folder> <conll_file> <output_conll_file>
+    flair_predict_conll.py <model_folder> <conll_file> <output_conll_file> [options]
 
 Arguments:
-    <model_folder> Trained Flair NER model folder
-    <conll_file> Folder path with the DOC decisions files to transform to TXT
-    <output_conll_file> Annotated CoNLL file using the model
+    <model_folder>              Trained Flair NER model folder
+    <conll_file>                Folder path with the DOC decisions files to transform to TXT
+    <output_conll_file>         Annotated CoNLL file using the model
+    --results_analysis=<r> RES  If True perform an performance analysis on the annotated data [default:False:bool]
+
 '''
 
 import copy
@@ -20,7 +23,7 @@ from sacremoses import MosesDetokenizer
 import torch
 
 from src.results.confusion_matrix_pretty_print import print_confusion_matrix
-from src.results.evaluate_results import print_errors
+from src.results.conll_evaluate_results import print_errors, print_results
 
 torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True
@@ -40,13 +43,7 @@ random.seed(5)
 detok = MosesDetokenizer()
 
 
-def print_results(y_true, y_pred):
-    print(classification_report(y_true, y_pred))
-    fscore = f1_score(y_true, y_pred)
-    print(f"F=score (micro??): {fscore:2f}")
-
-
-def main(conll_file_path: str, model_folder: str, output_file_path: str) -> None:
+def main(conll_file_path: str, model_folder: str, output_file_path: str, results_analysis: bool) -> None:
     conll_file_path = Path(conll_file_path)
     test_set = ColumnDataset(path_to_column_file=conll_file_path, column_name_map={0: 'text', 1: 'ner'})
     tagger: SequenceTagger = SequenceTagger.load(model=os.path.join(model_folder, 'final-model.pt'))
@@ -77,13 +74,11 @@ def main(conll_file_path: str, model_folder: str, output_file_path: str) -> None
             # print()
             out.write("\n")
 
-    print_results(y_true=y_true, y_pred=y_pred)
-    print()
-    print_confusion_matrix(y_true=y_true, y_pred=y_pred, labels=["B-LOC", "I-LOC", "B-PER_NOM", "I-PER_NOM",
-                                                                 "B-PER_PRENOM", "B-PER_PRENOM", "O"])
-
-    results_df = pd.read_csv(output_file_path, sep="\t", names=["token", "true_tag", "pred_tag"], skip_blank_lines=False)
-    print_errors(results_df)
+    if results_analysis:
+        print_results(y_true=y_true, y_pred=y_pred)
+        print()
+        results_df = pd.read_csv(output_file_path, sep="\t", names=["token", "true_tag", "pred_tag"], skip_blank_lines=False)
+        print_errors(results_df=results_df, window=5)
 
 
 
@@ -92,6 +87,8 @@ if __name__ == '__main__':
     model_folder = parser.model_folder
     conll_file_path = parser.conll_file
     output_file_path = parser.output_conll_file
+    results_analysis =  parser.results_analysis
     main(conll_file_path=conll_file_path,
          model_folder=model_folder,
-         output_file_path=output_file_path)
+         output_file_path=output_file_path,
+         results_analysis=results_analysis)

@@ -2,6 +2,9 @@ from typing import List, Optional
 
 import numpy as np
 from sklearn.metrics import confusion_matrix
+from io import StringIO
+import sys
+
 
 def print_confusion_matrix(
         y_true: np.ndarray,
@@ -10,6 +13,7 @@ def print_confusion_matrix(
         hide_zeroes: bool = False,
         hide_diagonal: bool = False,
         hide_threshold: Optional[float] = None,
+        return_string=False
 ):
     """Print a nicely formatted confusion matrix with labelled rows and columns.
 
@@ -24,7 +28,16 @@ def print_confusion_matrix(
         hide_diagonal (bool, optional): replace true positives (diagonal) with empty cells. Defaults to False.
         hide_threshold (Optional[float], optional): replace values below this threshold with empty cells. Set to None
             to display all values. Defaults to None.
+        return_string (bool, optional): do not print directly and return a string with the confusion_matrix.
+            Defaults to False.
     """
+    cm_string = StringIO()
+    old_stdout = sys.stdout
+
+    if return_string:
+        cm_string = StringIO()
+        sys.stdout = cm_string
+
     if labels is None:
         labels = np.unique(np.concatenate((y_true, y_pred)))
     cm = confusion_matrix(y_true, y_pred, labels=labels)
@@ -59,3 +72,7 @@ def print_confusion_matrix(
                 cell = cell if cm[i, j] > hide_threshold else empty_cell
             print(cell, end=' ')
         print()
+
+    if return_string:
+        sys.stdout = old_stdout
+    return cm_string.getvalue()
