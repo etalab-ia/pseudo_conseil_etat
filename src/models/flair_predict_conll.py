@@ -35,8 +35,6 @@ from flair.data import Corpus, Sentence
 from flair.datasets import DataLoader, ColumnDataset
 from flair.models import SequenceTagger
 from pathlib import Path
-from seqeval.metrics import classification_report
-from seqeval.metrics import f1_score
 
 # reproducibility
 random.seed(5)
@@ -46,7 +44,11 @@ detok = MosesDetokenizer()
 def main(conll_file_path: str, model_folder: str, output_file_path: str, results_analysis: bool) -> None:
     conll_file_path = Path(conll_file_path)
     test_set = ColumnDataset(path_to_column_file=conll_file_path, column_name_map={0: 'text', 1: 'ner'})
+    import pickle
+    pickle.dump(test_set, open("blind_test_columncorpus.pkl", "wb"))
+    exit()
     tagger: SequenceTagger = SequenceTagger.load(model=os.path.join(model_folder, 'final-model.pt'))
+
     # test_results, _ = tagger.evaluate(data_loader=DataLoader(test_set, batch_size=8))
     # print(test_results.detailed_results)
     sentences_original = test_set
