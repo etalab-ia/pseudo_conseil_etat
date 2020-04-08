@@ -22,7 +22,7 @@ from joblib import Parallel, delayed
 from sacremoses import MosesTokenizer, MosesPunctNormalizer
 from tqdm import tqdm
 
-from src.utils.tokenizer import moses_tokenize
+from src.utils.tokenizer import moses_tokenize, moses_detokenize
 
 try:
     logger = logging.getLogger('xml2conll')
@@ -487,7 +487,7 @@ def run(annotation_xml_path, accept_errors=False):
         conll.write(f"-DOCSTART-\tO\n\n")
         for tokens, tags in zip(all_tokens, all_tags):
             for tok, tag in zip(tokens, tags):
-                conll.write(f"{tok}\t{str(tag)}\n")
+                conll.write(f"{moses_detokenize([tok])}\t{str(tag)}\n")
                 # logger.debug(f"{tok}\t{str(tag)}")
             conll.write("\n")
             # logger.debug("\n")
