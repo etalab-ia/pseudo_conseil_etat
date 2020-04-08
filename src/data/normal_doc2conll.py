@@ -1,13 +1,12 @@
 '''
-Transforms input hand-annotated text files (with tags of type <LOCATION></LOCATION>) into CoNLL like text files
-that is, one word per line and the tag to the right.
+Transforms text files into CoNLL like text files, that is, one word per line.
 
 Usage:
     hand_made2conll.py <docs_folder>  [options]
 
 Arguments:
-    <docs_folder>                       Folder path with the txt annotated files to transform to CoNLL
-    --cores=<n> CORES                  Number of cores to use [default: 1:int]
+    <docs_folder>           Folder path with the txt annotated files to transform to CoNLL or the folder with the files
+    --cores=<n> CORES       Number of cores to use [default: 1:int]
 '''
 import glob
 import logging
@@ -16,49 +15,20 @@ import re
 
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer
+from sacremoses import MosesTokenizer, MosesPunctNormalizer
 from tqdm import tqdm
 
 # logging.basicConfig(filename='./logs/normal_doc2conll.log', filemode='w',
 #                     format="%(asctime)s:%(levelname)s:\t%(message)s", level=logging.INFO)
 
-TAGS_DICT = {"Nom": "PER_NOM", "Prenom": "PER_PRENOM", "Adresse": "LOC", "O": "O"}
-
 mt = MosesTokenizer(lang="fr")
-
-
-def moses_tokenize(phrase):
-    tokens = mt.penn_tokenize(phrase)
-    return tokens
+mpn = MosesPunctNormalizer(lang="fr")
 
 
 def tokenize(phrase):
-    # TODO: Tokenize with proper tokenizer
-    tokens = re.split("[\s,.]+", phrase)
-    tokens = [t for t in tokens if t]
+    phrase = mpn.normalize(phrase)
+    tokens = mt.penn_tokenize(phrase)
     return tokens
-
-
-def tags_to_bio(all_tags):
-    new_tags = []
-    for seq in all_tags:
-        new_tags.append([TAGS_DICT[t] for t in seq])
-    for seq in new_tags:
-        for i, tag in enumerate(seq):
-            if tag == "O":
-                continue
-            if i > 1:
-                if tag in seq[i - 1]:
-                    seq[i] = f"I-{tag}"
-                    continue
-            seq[i] = f"B-{tag}"
-    return new_tags
-
-
-def replace_tags(line):
-    line = re.sub(r"<(PRENOM|NOM|ADRESSE)>", r" BEGINTAG\g<1> ", line)
-    line = re.sub(r"</(PRENOM|NOM|ADRESSE)>", r" ENDTAG\g<1> ", line)
-    return line
 
 
 def get_word_per_line(text_lines):
@@ -83,7 +53,7 @@ def run(annotated_txt_path):
 
     all_tokens = get_word_per_line(text_lines)
 
-    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_TestCoNLL.txt"),
+    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_Tokens_CoNLL.txt"),
               "w") as conll:
         for tokens in all_tokens:
             for tok in tokens:
@@ -98,6 +68,7 @@ if __name__ == '__main__':
     tagged_file_path = parser.docs_folder
     n_jobs = parser.cores
     annotated_txt_paths = []
+
     if not os.path.isdir(tagged_file_path) and os.path.isfile(tagged_file_path):
         annotated_txt_paths = [tagged_file_path]
     else:

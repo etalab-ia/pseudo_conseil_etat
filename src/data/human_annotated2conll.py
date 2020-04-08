@@ -16,24 +16,14 @@ import re
 
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer
 from tqdm import tqdm
 
-logging.basicConfig(filename='../logs/hand_annotated2conll.log', filemode='w',
+from src.utils.tokenizer import moses_tokenize, moses_detokenize
+
+logging.basicConfig(filename='./logs/hand_annotated2conll.log', filemode='w',
                     format="%(asctime)s:%(levelname)s:\t%(message)s", level=logging.INFO)
 
 TAGS_DICT = {"Nom": "PER_NOM", "Prenom": "PER_PRENOM", "Adresse": "LOC", "O": "O"}
-
-mt = MosesTokenizer(lang="fr")
-def moses_tokenize(phrase):
-    tokens = mt.penn_tokenize(phrase)
-    return tokens
-
-def tokenize(phrase):
-    # TODO: Tokenize with proper tokenizer
-    tokens = re.split("[\s,.]+", phrase)
-    tokens = [t for t in tokens if t]
-    return tokens
 
 
 def tags_to_bio(all_tags):
@@ -97,17 +87,18 @@ def run(annotated_txt_path):
     decision_folder = os.path.dirname(annotated_txt_path)
 
     # TODO Here, change to a sentence segmentation text_lines
-    with open(annotated_txt_path) as filo:
+    with open(annotated_txt_path, encoding='utf-8-sig') as filo:
         text_lines = [l.strip() for l in filo.readlines()]
 
     all_tokens, all_tags = get_word_per_line(text_lines)
     all_tags = tags_to_bio(all_tags)
 
-    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_CoNLL.txt"),
+    with open(os.path.join(decision_folder, os.path.basename(annotated_txt_path)[:-4] + "_hand_CoNLL.txt"),
               "w") as conll:
+        conll.write(f"-DOCSTART-\tO\n\n")
         for tokens, tags in zip(all_tokens, all_tags):
             for tok, tag in zip(tokens, tags):
-                conll.write(f"{tok}\t{str(tag)}\n")
+                conll.write(f"{moses_detokenize([tok])}\t{str(tag)}\n")
                 logging.debug(f"{tok}\t{str(tag)}")
             conll.write("\n")
             logging.debug("\n")
@@ -120,7 +111,7 @@ if __name__ == '__main__':
     tagged_file_path = parser.docs_folder
     n_jobs = parser.cores
 
-    annotated_txt_paths = glob.glob(tagged_file_path + "**/*ann.txt", recursive=True)
+    annotated_txt_paths = glob.glob(tagged_file_path + "/**/*ann.txt", recursive=True)
     # annotated_txt_paths = ["/data/conseil_etat/hand_annotated/testing/C4121_ann.txt"]
     if n_jobs < 2:
         job_output = []
@@ -132,7 +123,7 @@ if __name__ == '__main__':
 
     # Get correctly processed paths
     processed_fine = [f"{c[1]}\n" for c in job_output if c[0] == 1]
-    with open("../logs/correct_human_annotated_txts.txt", "w") as filo:
+    with open("./logs/correct_human_annotated_txts.txt", "w") as filo:
         filo.writelines(processed_fine)
 
     tqdm.write(
