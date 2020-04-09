@@ -101,6 +101,7 @@ if __name__ == '__main__':
     do_not_follow_path = parser.do_not_follow_path
 
     df_decisions = pd.read_csv(decisions_csv)
+    df_decisions.columns = df_decisions.columns.str.lower()
     if only_corriges:
         df_decisions = df_decisions[df_decisions.statut == 5]
 
