@@ -83,6 +83,7 @@ def get_correct_line(df_decisions):
 
     return df_decisions.sort_values('timestamp_modification').drop_duplicates('chemin_source', keep='last')
 
+
 if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     decisions_csv = parser.documents_table
@@ -96,7 +97,6 @@ if __name__ == '__main__':
     df_decisions.columns = df_decisions.columns.str.lower()
     df_decisions = get_correct_line(df_decisions)
 
-
     if n_jobs < 2:
         job_output = []
         for row in tqdm(list(df_decisions.itertuples())[:]):
@@ -106,4 +106,4 @@ if __name__ == '__main__':
             delayed(save_decision_xml)(annotation_xml_path, documents_folder=documents_folder)
             for annotation_xml_path in tqdm(list(df_decisions.itertuples())))
     logger.info(f"{sum(job_output)} XML files were extracted and saved. {len(job_output) - sum(job_output)} files "
-                 f"were not found or some error happened.")
+                f"were not found or some error happened.")
