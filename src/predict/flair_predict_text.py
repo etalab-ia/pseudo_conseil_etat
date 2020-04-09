@@ -45,6 +45,9 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
         list_files = [Path(path) for path in glob.glob(text_file_path.as_posix() + "/**/*.txt", recursive=True)
                       if SUFFIX_TEXT not in path and SUFFIX_CONLL not in path]
 
+    if not list_files:
+        print(f"There were no txt files to analyze in {text_file_path.as_posix()}")
+        exit(1)
 
     # load model
     tagger = SequenceTagger.load(model=os.path.join(model_folder, 'best-model.pt'))

@@ -2,7 +2,7 @@
 Then saves it to disk, right next to the decision .doc file.
 
 We are mainly interested on the "corrigé" decisions, i.e., those that were corrected because due to a mistake of the
-annotation system. So the decision we status code 5 are the ones we llok for.
+annotation system. So the decision we status code 5 are the ones we look for.
 
 The status codes are:
 0 non traite
@@ -18,7 +18,7 @@ Usage:
 Arguments:
     <documents_table>                  CSV containing the table from the conseil d'etat decisions
     <documents_folder>                 Root folder that contains the decisions. Inside this folder should be a IN/OUT folder
-    --only_corriges CORRIG             Whether to extract only the corrige decisions or not [default: True: bool]
+    --only_corriges                    Whether to extract only the corrected (corrige) decisions or not
     --cores=<n> CORES                  Number of cores to use [default: 1:int]
 '''
 
@@ -80,6 +80,7 @@ def get_correct_line(df_decisions):
     :param df_decisions: Dataframe of decisions
     :return: Dataframe without repeated lines (according to the chemin_source column)
     """
+
     return df_decisions.sort_values('timestamp_modification').drop_duplicates('chemin_source', keep='last')
 
 if __name__ == '__main__':
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     df_decisions = pd.read_csv(decisions_csv)
     if only_corriges:
         df_decisions = df_decisions[df_decisions.statut == 5]
-
+    df_decisions.columns = df_decisions.columns.str.lower()
     df_decisions = get_correct_line(df_decisions)
 
 
