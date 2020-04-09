@@ -25,6 +25,8 @@ Arguments:
 import glob
 import logging
 import os
+import re
+
 from joblib import Parallel, delayed
 import pandas as pd
 
@@ -78,6 +80,7 @@ def save_decision_xml(df_row, documents_folder, do_not_follow_path=False):
 
     with open(xml_path, "w", encoding="utf-16") as xmlo:
         logger.info(f"Saving XML file as {xml_path}")
+        annotations_xml = re.sub(r"[^\x01-\x7f]+", "", annotations_xml)
         xmlo.write(annotations_xml)
     return 1
 
