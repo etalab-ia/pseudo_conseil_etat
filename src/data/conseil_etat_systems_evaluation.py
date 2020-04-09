@@ -2,7 +2,7 @@
  It extracts the CoNLL files inside folder one, determines which are in common with the second and
 outputs one file with three columns: tokens, golden tag, and predicted tag
 Usage:
-    add_golden_tags.py <golden_folder_path> <predicted_folder_path>  <output_path> [options]
+    conseil_etat_systems_evaluation.py <golden_folder_path> <predicted_folder_path>  <output_path> [options]
 
 Arguments:
     <golden_folder_path>       Folder with CoNLL files with golden tags
