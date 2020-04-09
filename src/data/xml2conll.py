@@ -19,7 +19,6 @@ from collections import defaultdict, Counter
 import numpy as np
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer, MosesPunctNormalizer
 from tqdm import tqdm
 
 from src.utils.tokenizer import moses_tokenize, moses_detokenize
@@ -306,44 +305,6 @@ def tags_to_bio(all_tags):
             seq[i] = f"B-{new_tag}"
     return new_tags
 
-
-#
-# def postprocess_sequence(all_tags, all_tokens):
-#     """
-#     Applies postropcessing techniques to the sequences extracted from a text file (either created from xml+txt, from
-#     hand annodated txt, or from a plain txt file)
-#     :param all_tags: List of lists (a list per sequence) with the tags of each token of the sequence
-#     :param all_tokens: List of lists (a list per sequence) with the tokens of each sequence
-#     :return: all_tags
-#     :return: all_tokens
-#     """
-#     def partition(alist, indices):
-#         return [alist[i:j] for i, j in zip([0]+indices, indices+[None])]
-#
-#     def break_long_sequences(sequence_tokens, sequence_tags, max_sequence_len=200, split_char=";"):
-#         """
-#         Break a sequence if it is too long according to the threshold
-#         :param sequence_tokens: List of sequence tokens
-#         :param sequence_tags: List of sequence tags
-#         :param max_sequence_len: Threshold of max number of characters
-#         :return:
-#         """
-#         new_sequences_tokens = []
-#         new_sequences_tags = []
-#         if len(sequence_tokens) > max_sequence_len:
-#             get_split_char_indices = [i for i, val in enumerate(sequence_tokens) if val == split_char]
-#             temps_sequences = partition(sequence_tokens, get_split_char_indices)
-#             # if len(temps_sequences)  1:
-#
-#
-#             for token, tag in temps_sequences:
-#         else:
-#             return sequence_tokens, sequence_tags
-#
-#
-#         pass
-#
-#     pass
 
 def find_reason_alignment_fail(per_line_tagged_entity: dict, text_lines: list):
     """
