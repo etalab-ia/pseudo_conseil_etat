@@ -27,8 +27,13 @@ from flair.datasets import ColumnDataset
 from flair.models import SequenceTagger
 from pathlib import Path
 
-from src.utils.tokenizer import moses_tokenize, moses_detokenize
+from tqdm import tqdm
 
+from src.utils.tokenizer import moses_tokenize, moses_detokenize
+from pathlib import Path
+
+SUFFIX_CONLL = "_NLP_CoNLL"
+SUFFIX_TEXT = "_annon"
 
 def main(text_file_path: str, model_folder: str, output_format: str) -> None:
     text_file_path = Path(text_file_path)
@@ -37,16 +42,18 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
     if os.path.isfile(text_file_path):
         list_files = [text_file_path]
     else:
-        list_files = glob.glob(text_file_path + "/**/*.txt", recursive=True)
+        list_files = [Path(path) for path in glob.glob(text_file_path.as_posix() + "/**/*.txt", recursive=True)
+                      if SUFFIX_TEXT not in path and SUFFIX_CONLL not in path]
+
 
     # load model
     tagger = SequenceTagger.load(model=os.path.join(model_folder, 'best-model.pt'))
 
     file_sentences = []
-    for file_ in list_files:
+    for file_ in tqdm(list_files):
         with open(file_, encoding="utf-8-sig") as text_file:
-            sentences_predict = [Sentence(l.strip(), use_tokenizer=lambda x: moses_tokenize(x)) for l in text_file.readlines()
-                           if l and len(l.strip()) > 1]
+            sentences_predict = [Sentence(line.strip(), use_tokenizer=lambda x: moses_tokenize(x))
+                                 for line in text_file.readlines() if line.strip()]
 
         _ = tagger.predict(sentences=sentences_predict,
                            mini_batch_size=8,
@@ -54,7 +61,7 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
                            verbose=True)
 
         if output_format == "conll" or output_format == "both":
-            with open(os.path.join(file_.parent, file_.stem + "_NLP_CoNLL.txt"), "w") as out:
+            with open(os.path.join(file_.parent, file_.stem + f"{SUFFIX_CONLL}.txt"), "w") as out:
                 out.write(f"-DOCSTART-\tO\n\n")
                 for sent_pred in sentences_predict:
                     for tok_pred in sent_pred:
@@ -63,7 +70,7 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
                         out.write(result_str + "\n")
                     out.write("\n")
         if output_format == "txt" or output_format == "both":
-            with open(os.path.join(file_.parent, file_.stem + "_tagged_text.txt"), "w") as out:
+            with open(os.path.join(file_.parent, file_.stem + f"{SUFFIX_TEXT}.txt"), "w") as out:
                 for sent_pred in sentences_predict:
                     out.write(re.sub(r"<.*>", "...", sent_pred.to_tagged_string()))
                     out.write("\n")
