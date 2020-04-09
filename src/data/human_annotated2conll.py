@@ -73,7 +73,12 @@ def get_word_per_line(text_lines):
                 tag = matched_begin.groups()[0].capitalize()
                 tagged_sequence = True
                 continue
-            seq_list.append((tok, tag))
+
+            if tok == "&apos;" and seq_list[-1][0] == "d":
+                seq_list[-1][0] = "d"+tok
+                continue
+
+            seq_list.append([tok, tag])
         tokens, tags = list(zip(*seq_list))
         all_tokens.append(tokens)
         all_tags.append(tags)
@@ -115,7 +120,6 @@ if __name__ == '__main__':
         annotated_txt_paths = [tagged_file_path]
     else:
         annotated_txt_paths = glob.glob(tagged_file_path + "/**/*ann.txt", recursive=True)
-    # annotated_txt_paths = ["/data/conseil_etat/hand_annotated/testing/C4121_ann.txt"]
     if n_jobs < 2:
         job_output = []
         for annotated_txt_path in tqdm(annotated_txt_paths):

@@ -14,8 +14,7 @@ Arguments:
     <golden_folder_path>                Folder with CoNLL files with golden tags
     <predicted_folder_path>             Folder with CoNLL files with predicted tags
     <output_path>                       Output CoNLL file with the three coluns
-    --comparison_folder_path   COMP     Folder with the comparison CoNLL files. Pass this to use the exact same files
-                                        in solution A and B and Gold (default: None)
+    --comparison_folder_path=<c>   COMP     Folder with the comparison CoNLL files. Pass this to use the exact same files in solution A and B and Gold (default: None)
 '''
 import glob
 from pathlib import Path
@@ -30,15 +29,17 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
     golden_files = glob.glob(golden_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
     prediction_files = glob.glob(predicted_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
 
-    golden_files_ids = [Path(p).stem.split("_")[0] for p in golden_files]
-    prediction_files_ids = [Path(p).stem.split("_")[0] for p in prediction_files]
+    golden_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in golden_files]
+    prediction_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in prediction_files]
     intersect_ids = set(golden_files_ids).intersection(prediction_files_ids)
+    intersect_ids = sorted(intersect_ids)
     if comparison_folder_path:
         comparison_files = glob.glob(comparison_folder_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
         comparison_files_ids = [Path(p).stem.split("_")[0] for p in comparison_files]
-        intersect_ids = intersect_ids.intersection(comparison_files_ids)
+        intersect_ids = sorted(intersect_ids.intersection(comparison_files_ids))
 
     list_dfs = []
+
     for id_doc in intersect_ids:
         golden_file_path = [f for f in golden_files if id_doc in f]
         prediction_file_path = [f for f in prediction_files if id_doc in f]
@@ -46,9 +47,11 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
         assert golden_file_path, f"The file with id {id_doc} was not found in the golden folder"
         assert prediction_file_path, f"The file with id {id_doc} was not found in the predicted folder"
         print(f"\tReading gold file: {golden_file_path[0]}")
-        gold_df = pd.read_csv(golden_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python")
+        gold_df = pd.read_csv(golden_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
+                              skip_blank_lines=False).fillna("")
         print(f"\tReading pred file: {prediction_file_path[0]}")
-        pred_df = pd.read_csv(prediction_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python")
+        pred_df = pd.read_csv(prediction_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
+                              skip_blank_lines=False).fillna("")
 
         assert len(gold_df) == len(pred_df), \
             f"The files {golden_file_path} and {prediction_file_path} do not have the same dimensions"
@@ -57,6 +60,7 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
         list_dfs.append(gold_df.copy(deep=True))
         print(f"Created true/pred dataframe with files {golden_file_path[0]} and {prediction_file_path[0]}")
 
+    print(f"Total number of CoNLL files within the output file: {len(list_dfs)}")
     final_df: pd.DataFrame = pd.concat(list_dfs)
     final_df.to_csv(output_path, header=None, index=None, sep="\t")
     return final_df

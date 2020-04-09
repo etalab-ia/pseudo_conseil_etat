@@ -2,7 +2,7 @@
 Transforms text files into CoNLL like text files, that is, one word per line.
 
 Usage:
-    hand_made2conll.py <docs_folder>  [options]
+    txt2conll.py <docs_folder>  [options]
 
 Arguments:
     <docs_folder>           Folder path with the txt annotated files to transform to CoNLL or the folder with the files
