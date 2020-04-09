@@ -111,7 +111,10 @@ if __name__ == '__main__':
     tagged_file_path = parser.docs_folder
     n_jobs = parser.cores
 
-    annotated_txt_paths = glob.glob(tagged_file_path + "/**/*ann.txt", recursive=True)
+    if os.path.isfile(tagged_file_path):
+        annotated_txt_paths = [tagged_file_path]
+    else:
+        annotated_txt_paths = glob.glob(tagged_file_path + "/**/*ann.txt", recursive=True)
     # annotated_txt_paths = ["/data/conseil_etat/hand_annotated/testing/C4121_ann.txt"]
     if n_jobs < 2:
         job_output = []
