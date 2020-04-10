@@ -221,7 +221,7 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
         end_position += 1
 
         if start_position < 0:
-            logger.error(f"Could not find {debug_list} in phrase tokens {tokens[start_position_id:]}")
+            logger.error(f"Could not find {replacement_tokenenized} in phrase tokens {tokens}")
             return None, None
 
         else:
