@@ -214,9 +214,6 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
     for line_id, replacement in enumerate(line_replacements):
         replacement_tokenenized = moses_tokenize(replacement["token"])
 
-        # start_position, debug_list = find_index(tokens, start_position_id, replacement_tokenenized[0])
-        # end_position = start_position + len(replacement_tokenenized)
-
         start_position, end_position = find_sub_list(replacement_tokenenized, tokens, start_position_id)
         end_position += 1
 
@@ -323,45 +320,6 @@ def tags_to_bio(all_tags):
                     continue
             seq[i] = f"B-{new_tag}"
     return new_tags
-
-
-#
-# def postprocess_sequence(all_tags, all_tokens):
-#     """
-#     Applies postropcessing techniques to the sequences extracted from a text file (either created from xml+txt, from
-#     hand annodated txt, or from a plain txt file)
-#     :param all_tags: List of lists (a list per sequence) with the tags of each token of the sequence
-#     :param all_tokens: List of lists (a list per sequence) with the tokens of each sequence
-#     :return: all_tags
-#     :return: all_tokens
-#     """
-#     def partition(alist, indices):
-#         return [alist[i:j] for i, j in zip([0]+indices, indices+[None])]
-#
-#     def break_long_sequences(sequence_tokens, sequence_tags, max_sequence_len=200, split_char=";"):
-#         """
-#         Break a sequence if it is too long according to the threshold
-#         :param sequence_tokens: List of sequence tokens
-#         :param sequence_tags: List of sequence tags
-#         :param max_sequence_len: Threshold of max number of characters
-#         :return:
-#         """
-#         new_sequences_tokens = []
-#         new_sequences_tags = []
-#         if len(sequence_tokens) > max_sequence_len:
-#             get_split_char_indices = [i for i, val in enumerate(sequence_tokens) if val == split_char]
-#             temps_sequences = partition(sequence_tokens, get_split_char_indices)
-#             # if len(temps_sequences)  1:
-#
-#
-#             for token, tag in temps_sequences:
-#         else:
-#             return sequence_tokens, sequence_tags
-#
-#
-#         pass
-#
-#     pass
 
 def find_reason_alignment_fail(per_line_tagged_entity: dict, text_lines: list):
     """
@@ -516,7 +474,6 @@ if __name__ == '__main__':
     tagged_folder_path = parser.docs_folder
     n_jobs = parser.cores
 
-    # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
     # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
     annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
     if n_jobs < 2:
