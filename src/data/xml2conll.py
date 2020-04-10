@@ -413,8 +413,8 @@ def run(annotation_xml_path, accept_errors=False):
 
         # open decision .txt file
         text_lines = load_decision(decision_txt_path)
-        if not text_lines:
-            logger.error(f"There were no lines found in {decision_txt_path}")
+        if not text_lines and not accept_errors:
+            logger.error(f"There were    no lines found in {decision_txt_path}")
             return 0, annotation_xml_path
 
         # align xml and txt file
