@@ -211,7 +211,6 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
             tipos = [f"B-{tipos}" if f == 0 else f"I-{tipos}" for f in range(len(replacement_tokenenized))]
             if len(tags[start_position: end_position]) != len(tipos):
                 pass
-                print()
             tags[start_position: end_position] = tipos
             start_position_id = end_position
             # oh god horrible hack to not increment the index if we have multiple tokens nested in a xml annotation :(
@@ -227,7 +226,7 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
     return tokens, tags.tolist()
 
 
-def load_annotation(file_path, count_differing_annotations=False):
+def load_annotation(file_path, count_differing_annotations=False, accept_errors=False):
     error = ""
     try:
         tree = ET.parse(file_path)
@@ -236,7 +235,7 @@ def load_annotation(file_path, count_differing_annotations=False):
         tagged_sequences = get_tagged_sequences(file_info)
         per_line_tagged_sequence = get_per_line_replacements(tagged_sequences, sort_lines=True, zero_index=False)
 
-        if not per_line_tagged_sequence:
+        if not per_line_tagged_sequence and not accept_errors:
             error = f"There were no annotations found in {file_path}."
             return None, error
 
@@ -405,22 +404,23 @@ def run(annotation_xml_path, accept_errors=False):
     try:
         # Load annotation from xml, create line replacements dict
         per_line_tagged_entity, outcome = load_annotation(annotation_xml_path,
-                                                          count_differing_annotations=True)
+                                                          count_differing_annotations=True,
+                                                          accept_errors=accept_errors)
 
-        if not per_line_tagged_entity:
+        if not per_line_tagged_entity and not accept_errors:
             logger.error(outcome)
             return 0, annotation_xml_path
 
         # open decision .txt file
         text_lines = load_decision(decision_txt_path)
         if not text_lines and not accept_errors:
-            logger.error(f"There were    no lines found in {decision_txt_path}")
+            logger.error(f"There were no lines found in {decision_txt_path}")
             return 0, annotation_xml_path
 
         # align xml and txt file
         per_line_tagged_entity_aligned = text_xml_alignment(per_line_tagged_entity, text_lines=text_lines,
                                                             accept_errors=accept_errors)
-        if not per_line_tagged_entity_aligned:
+        if not per_line_tagged_entity_aligned and not accept_errors:
             reason = find_reason_alignment_fail(per_line_tagged_entity, text_lines)
             logger.error(f"Could not perfectly align this file {annotation_xml_path}. Reason: {reason[1]}")
             return 0, annotation_xml_path
@@ -462,8 +462,10 @@ if __name__ == '__main__':
     accept_errors = parser.accept_errors
 
     # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
-    # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
+    # annotation_xml_paths = ["/data/conseil_etat/manual_martinie/RB_system/Non_annotees_lot1/3955051pr1.xml"]
     annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
+    if accept_errors:
+        tqdm.write("BEWARE: The accept_errors flag is active. We will create CoNLL files even if the XML is faulty!")
     if n_jobs < 2:
         job_output = []
         for annotation_xml_path in tqdm(annotation_xml_paths):
