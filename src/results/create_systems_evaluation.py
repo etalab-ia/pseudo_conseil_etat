@@ -30,13 +30,13 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
     golden_files = glob.glob(golden_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
     prediction_files = glob.glob(predicted_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
 
-    golden_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in golden_files]
-    prediction_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in prediction_files]
+    golden_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in golden_files]
+    prediction_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in prediction_files]
     intersect_ids = set(golden_files_ids).intersection(prediction_files_ids)
     intersect_ids = sorted(intersect_ids)
     if comparison_folder_path:
         comparison_files = glob.glob(comparison_folder_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
-        comparison_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in comparison_files]
+        comparison_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in comparison_files]
         intersect_ids = sorted(set(intersect_ids).intersection(comparison_files_ids))
 
     print(f"Using the following golden files IDs {intersect_ids}")
