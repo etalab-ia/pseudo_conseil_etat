@@ -8,6 +8,7 @@ Usage:
 Arguments:
     <docs_folder>                       Folder path with the txt annotated files to transform to CoNLL
     --cores=<n> CORES                  Number of cores to use [default: 1:int]
+    --no_anno_suffix                        If passed, the suffix "ann" is not searched for in the txt filenames
 '''
 import glob
 import logging
@@ -110,8 +111,11 @@ if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     tagged_file_path = parser.docs_folder
     n_jobs = parser.cores
-
-    annotated_txt_paths = glob.glob(tagged_file_path + "/**/*ann.txt", recursive=True)
+    no_anno_suffix = parser.no_anno_suffix
+    suffix = "ann"
+    if no_anno_suffix:
+        suffix = ""
+    annotated_txt_paths = glob.glob(f"{tagged_file_path}/**/*{suffix}.txt", recursive=True)
     # annotated_txt_paths = ["/data/conseil_etat/hand_annotated/testing/C4121_ann.txt"]
     if n_jobs < 2:
         job_output = []
