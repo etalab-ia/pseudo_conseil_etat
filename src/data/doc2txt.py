@@ -5,7 +5,7 @@ Usage:
 
 Arguments:
     <docs_folder>                      Folder path with the DOC decisions files to transform to TXT
-    --convert_missing                  Only convert those DOCs that are missing [default: False: bool]
+    --convert_missing                  Only convert those DOCs that are missing
     --cores=<n> CORES                  Number of cores to use [default: 1:int]
 '''
 import logging
@@ -32,7 +32,7 @@ def doc2txt(doc_path):
 if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     doc_files_path = parser.docs_folder
-    convert_missing = bool(parser.convert_missing)
+    convert_missing = parser.convert_missing
     n_jobs = parser.cores
     doc_paths = []
     if not os.path.isdir(doc_files_path) and os.path.isfile(doc_files_path):
