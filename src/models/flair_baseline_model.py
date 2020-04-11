@@ -4,7 +4,7 @@ from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings,
 from typing import List
 import torch
 
-from src.utils import Monitor
+from src.utils.monitoring import Monitor
 
 torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True

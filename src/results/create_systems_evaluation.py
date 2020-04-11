@@ -8,13 +8,14 @@ The script takes two folders, one with gold labels CoNLL files, the second with 
 It extracts the CoNLL files inside folder one, determines which are in common with the second and
 outputs one file with three columns: tokens, golden tag, and predicted tag
 Usage:
-    conseil_etat_systems_evaluation.py <golden_folder_path> <predicted_folder_path>  <output_path> [options]
+    create_systems_evaluation.py <golden_folder_path> <predicted_folder_path>  <output_path> [options]
 
 Arguments:
-    <golden_folder_path>                Folder with CoNLL files with golden tags
-    <predicted_folder_path>             Folder with CoNLL files with predicted tags
-    <output_path>                       Output CoNLL file with the three coluns
+    <golden_folder_path>                    Folder with CoNLL files with golden tags
+    <predicted_folder_path>                 Folder with CoNLL files with predicted tags
+    <output_path>                           Output CoNLL file with the three coluns
     --comparison_folder_path=<c>   COMP     Folder with the comparison CoNLL files. Pass this to use the exact same files in solution A and B and Gold (default: None)
+    --only_gold_annotated                   Keep only the hand annotated entities in the output CoNLL files
 '''
 import glob
 from pathlib import Path
@@ -24,7 +25,7 @@ import pandas as pd
 
 
 def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
-         comparison_folder_path: Path = None):
+         comparison_folder_path: Path = None, only_gold_annotated: bool = False):
 
     golden_files = glob.glob(golden_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
     prediction_files = glob.glob(predicted_conll_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
@@ -35,11 +36,11 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
     intersect_ids = sorted(intersect_ids)
     if comparison_folder_path:
         comparison_files = glob.glob(comparison_folder_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
-        comparison_files_ids = [Path(p).stem.split("_")[0] for p in comparison_files]
-        intersect_ids = sorted(intersect_ids.intersection(comparison_files_ids))
+        comparison_files_ids = [Path(p).stem.split("_")[0].split()[0] for p in comparison_files]
+        intersect_ids = sorted(set(intersect_ids).intersection(comparison_files_ids))
 
+    print(f"Using the following golden files IDs {intersect_ids}")
     list_dfs = []
-
     for id_doc in intersect_ids:
         golden_file_path = [f for f in golden_files if id_doc in f]
         prediction_file_path = [f for f in prediction_files if id_doc in f]
@@ -47,15 +48,19 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
         assert golden_file_path, f"The file with id {id_doc} was not found in the golden folder"
         assert prediction_file_path, f"The file with id {id_doc} was not found in the predicted folder"
         print(f"\tReading gold file: {golden_file_path[0]}")
-        gold_df = pd.read_csv(golden_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
+        gold_df: pd.DataFrame = pd.read_csv(golden_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
                               skip_blank_lines=False).fillna("")
+
         print(f"\tReading pred file: {prediction_file_path[0]}")
-        pred_df = pd.read_csv(prediction_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
+        pred_df: pd.DataFrame = pd.read_csv(prediction_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
                               skip_blank_lines=False).fillna("")
 
         assert len(gold_df) == len(pred_df), \
             f"The files {golden_file_path} and {prediction_file_path} do not have the same dimensions"
 
+        if only_gold_annotated:
+            gold_df = gold_df[(gold_df["tag"] != "O") & (gold_df["tag"] != "")]
+            pred_df = pred_df.loc[gold_df.index]
         gold_df["pred_tag"] = pred_df["tag"]
         list_dfs.append(gold_df.copy(deep=True))
         print(f"Created true/pred dataframe with files {golden_file_path[0]} and {prediction_file_path[0]}")
@@ -72,10 +77,13 @@ if __name__ == '__main__':
     predicted_conll_path = Path(parser.predicted_folder_path)
     output_path = Path(parser.output_path)
     comparison_folder_path = parser.comparison_folder_path
+    only_gold_annotated = parser.only_gold_annotated
+
     if comparison_folder_path:
         comparison_folder_path = Path(comparison_folder_path)
 
     main(golden_conll_path=golden_conll_path,
          predicted_conll_path=predicted_conll_path,
          output_path=output_path,
-         comparison_folder_path=None)
+         comparison_folder_path=comparison_folder_path,
+         only_gold_annotated=only_gold_annotated)
