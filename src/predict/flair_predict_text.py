@@ -60,7 +60,7 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
 
         _ = tagger.predict(sentences=sentences_predict,
                            mini_batch_size=8,
-                           embedding_storage_mode="none",
+                           embedding_storage_mode="cpu",
                            verbose=True)
 
         if output_format == "conll" or output_format == "both":
@@ -69,7 +69,6 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
                 for sent_pred in sentences_predict:
                     for tok_pred in sent_pred:
                         result_str = f"{moses_detokenize([tok_pred.text])}\t{tok_pred.get_tag('ner').value}"
-                        # print(result_str)
                         out.write(result_str + "\n")
                     out.write("\n")
         if output_format == "txt" or output_format == "both":

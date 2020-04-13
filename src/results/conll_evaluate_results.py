@@ -6,8 +6,8 @@ Usage:
     conll_evaluate_results.py <conll_file_path> <output_results_path> [options]
 
 Arguments:
-    <conll_file_path>                Folder path with the DOC decisions files to transform to TXT
-    <output_results_path>            Annotated CoNLL file using the model
+    <conll_file_path>                Annotated CoNLL file using the model
+    <output_results_path>            Output text fiile where to save the analysis
 
     --window=<p>                     If equal to "single" print the single tokens that were misclassified. [default: single]
                                      If it is an int, show the previous and following n tokens around the error.
@@ -18,7 +18,6 @@ Arguments:
 import pandas as pd
 from argopt import argopt
 
-pd.set_option('display.max_rows', 1000)
 from seqeval.metrics import classification_report, f1_score
 
 from src.results.confusion_matrix_pretty_print import print_confusion_matrix
@@ -32,9 +31,12 @@ def print_results(y_true, y_pred):
     print(f"F-score (micro): {fscore:.2f}")
     fscore_str = f"F-score (micro): {fscore:.2f}"
 
+    labels = list(set(y_true))
+    labels.pop(labels.index("O"))
+    labels = sorted(labels, key=lambda x: x[2]) + ["O"]
+
     cm = print_confusion_matrix(y_true=y_true, y_pred=y_pred,
-                                labels=["B-LOC", "I-LOC", "B-PER_NOM", "I-PER_NOM", "B-PER_PRENOM", "I-PER_PRENOM",
-                                        "O"],
+                                labels=labels,
                                 return_string=True)
     print(cm)
 
@@ -71,7 +73,7 @@ def print_errors(results_df: pd.DataFrame, type_error=None, window="single", ret
 
     if window == "single":
         final_df = results_df.loc[errors_idx]
-        print(final_df)
+        print(final_df.to_string())
     elif isinstance(window, int):
         lower_bound, upper_bound = (-1, -1)
         for idx in errors_idx:
@@ -96,7 +98,6 @@ def main(conll_file_path, output_results_path, type_error, window):
     results = print_results(y_true=y_true, y_pred=y_pred)
     print()
     errors = print_errors(results_df=results_df, type_error=type_error, window=window, return_string=True)
-    print()
     print(errors)
     results_errors = list(results) + [errors]
 

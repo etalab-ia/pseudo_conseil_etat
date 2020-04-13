@@ -15,13 +15,25 @@ Arguments:
     <predicted_folder_path>                 Folder with CoNLL files with predicted tags
     <output_path>                           Output CoNLL file with the three coluns
     --comparison_folder_path=<c>   COMP     Folder with the comparison CoNLL files. Pass this to use the exact same files in solution A and B and Gold (default: None)
-    --only_gold_annotated                   Keep only the hand annotated entities in the output CoNLL files
+    --only_gold_annotated                   Keep only the predictions corresponding to hand annotated tags in the output CoNLL files
 '''
 import glob
 from pathlib import Path
 
 from argopt import argopt
 import pandas as pd
+
+def flexible_intersect(list_a, list_b):
+    intersection = []
+    for elem_a in list_a:
+        for elem_b in list_b:
+            if elem_a in elem_b:
+                intersection.append(elem_a)
+                break
+            elif elem_b in elem_a:
+                intersection.append(elem_b)
+                break
+    return intersection
 
 
 def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
@@ -32,12 +44,12 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
 
     golden_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in golden_files]
     prediction_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in prediction_files]
-    intersect_ids = set(golden_files_ids).intersection(prediction_files_ids)
-    intersect_ids = sorted(intersect_ids)
+    intersect_ids = sorted(flexible_intersect(golden_files_ids, prediction_files_ids))
+    not_same_df = []
     if comparison_folder_path:
         comparison_files = glob.glob(comparison_folder_path.as_posix() + "/**/*CoNLL*.txt", recursive=True)
         comparison_files_ids = [Path(p).stem.split("_")[0].split()[0].replace("pr1", "") for p in comparison_files]
-        intersect_ids = sorted(set(intersect_ids).intersection(comparison_files_ids))
+        intersect_ids = sorted(flexible_intersect(intersect_ids, comparison_files_ids))
 
     print(f"Using the following golden files IDs {intersect_ids}")
     list_dfs = []
@@ -55,8 +67,10 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
         pred_df: pd.DataFrame = pd.read_csv(prediction_file_path[0], names=["token", "tag"], delim_whitespace=True, engine="python",
                               skip_blank_lines=False).fillna("")
 
-        assert len(gold_df) == len(pred_df), \
-            f"The files {golden_file_path} and {prediction_file_path} do not have the same dimensions"
+        if not len(gold_df) == len(pred_df):
+            print(f"The files {golden_file_path} and {prediction_file_path} do not have the same dimensions")
+            not_same_df.append((golden_file_path, prediction_file_path))
+            continue
 
         if only_gold_annotated:
             gold_df = gold_df[(gold_df["tag"] != "O") & (gold_df["tag"] != "")]
@@ -66,6 +80,7 @@ def main(golden_conll_path: Path, predicted_conll_path: Path, output_path: Path,
         print(f"Created true/pred dataframe with files {golden_file_path[0]} and {prediction_file_path[0]}")
 
     print(f"Total number of CoNLL files within the output file: {len(list_dfs)}")
+    print(f"These files had some error")
     final_df: pd.DataFrame = pd.concat(list_dfs)
     final_df.to_csv(output_path, header=None, index=None, sep="\t")
     return final_df

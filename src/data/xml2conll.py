@@ -5,7 +5,8 @@ Usage:
     xml2conll.py <docs_folder>  [options]
 
 Arguments:
-    <docs_folder>                       Folder path with the XML annotation file to transform to CoNLL
+    <docs_folder>                      Folder path with the XML annotation file to transform to CoNLL
+    --accept_errors                    Try to use the XML annotation even if it has incoherences
     --cores=<n> CORES                  Number of cores to use [default: 1:int]
 '''
 import glob
@@ -18,8 +19,9 @@ from collections import defaultdict, Counter
 import numpy as np
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer, MosesPunctNormalizer
 from tqdm import tqdm
+
+from src.utils.tokenizer import moses_tokenize, moses_detokenize
 
 try:
     logger = logging.getLogger('xml2conll')
@@ -61,7 +63,7 @@ def remove_nested_entities(matched_entities):
     return clean_matched_entities
 
 
-def text_xml_alignment(per_line_tagged_tokens, text_lines, xml_path):
+def text_xml_alignment(per_line_tagged_tokens, text_lines, accept_errors=False):
     """
     Align text with xml annotations. Returns a dict {line_1: [{token:'', replacement:'', tipo:'', line:''}, {} ],
                                                     line_2: [{token:'', replacement:'', tipo:'', line:''}, {} ],
@@ -105,7 +107,7 @@ def text_xml_alignment(per_line_tagged_tokens, text_lines, xml_path):
                     found_index = line_index
                     per_line_tagged_tokens_copy[found_index] = replacements
                     break
-    if len(per_line_tagged_tokens_copy) != len(per_line_tagged_tokens):
+    if len(per_line_tagged_tokens_copy) != len(per_line_tagged_tokens) and not accept_errors:
         return None
     return per_line_tagged_tokens_copy
 
@@ -149,17 +151,6 @@ def get_per_line_replacements(tagged_sequences, sort_lines=False, zero_index=Fal
         per_line_dict = dict(sorted(per_line_dict.items(), key=lambda x: x[0]))
 
     return per_line_dict
-
-
-mpn = MosesPunctNormalizer()
-mt = MosesTokenizer(lang="fr")
-
-
-def moses_tokenize(phrase):
-    phrase = mpn.normalize(phrase)
-    tokens = mt.tokenize(phrase)
-    return tokens
-
 
 def tokenize(phrase):
     # TODO: Tokenize with proper tokenizer
@@ -218,7 +209,7 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
         end_position += 1
 
         if start_position < 0:
-            logger.error(f"Could not find {replacement_tokenenized} in phrase tokens {tokens}")
+            logger.error(f"Could not find {replacement_tokenenized} in phrase tokens {tokens[start_position_id:]}")
             return None, None
 
         else:
@@ -243,7 +234,7 @@ def get_line_tags(line_replacements, line_nb, lines, file_treated):
     return tokens, tags.tolist()
 
 
-def load_annotation(file_path, count_differing_annotations=False):
+def load_annotation(file_path, count_differing_annotations=False, accept_errors=False):
     error = ""
     try:
         tree = ET.parse(file_path)
@@ -252,7 +243,7 @@ def load_annotation(file_path, count_differing_annotations=False):
         tagged_sequences = get_tagged_sequences(file_info)
         per_line_tagged_sequence = get_per_line_replacements(tagged_sequences, sort_lines=True, zero_index=False)
 
-        if not per_line_tagged_sequence:
+        if not per_line_tagged_sequence and not accept_errors:
             error = f"There were no annotations found in {file_path}."
             return None, error
 
@@ -320,6 +311,7 @@ def tags_to_bio(all_tags):
                     continue
             seq[i] = f"B-{new_tag}"
     return new_tags
+
 
 def find_reason_alignment_fail(per_line_tagged_entity: dict, text_lines: list):
     """
@@ -405,7 +397,7 @@ def find_reason_alignment_fail(per_line_tagged_entity: dict, text_lines: list):
     return reason
 
 
-def run(annotation_xml_path):
+def run(annotation_xml_path, accept_errors=False):
     logger.info(f"Treating file {annotation_xml_path}")
     tqdm.write(f"Treating file {annotation_xml_path}")
     decision_folder = os.path.dirname(annotation_xml_path)
@@ -419,22 +411,24 @@ def run(annotation_xml_path):
 
     try:
         # Load annotation from xml, create line replacements dict
-        per_line_tagged_entity, outcome = load_annotation(annotation_xml_path, count_differing_annotations=True)
+        per_line_tagged_entity, outcome = load_annotation(annotation_xml_path,
+                                                          count_differing_annotations=True,
+                                                          accept_errors=accept_errors)
 
-        if not per_line_tagged_entity:
+        if not per_line_tagged_entity and not accept_errors:
             logger.error(outcome)
             return 0, annotation_xml_path
 
         # open decision .txt file
         text_lines = load_decision(decision_txt_path)
-        if not text_lines:
+        if not text_lines and not accept_errors:
             logger.error(f"There were no lines found in {decision_txt_path}")
             return 0, annotation_xml_path
 
         # align xml and txt file
         per_line_tagged_entity_aligned = text_xml_alignment(per_line_tagged_entity, text_lines=text_lines,
-                                                            xml_path=annotation_xml_path)
-        if not per_line_tagged_entity_aligned:
+                                                            accept_errors=accept_errors)
+        if not per_line_tagged_entity_aligned and not accept_errors:
             reason = find_reason_alignment_fail(per_line_tagged_entity, text_lines)
             logger.error(f"Could not perfectly align this file {annotation_xml_path}. Reason: {reason[1]}")
             return 0, annotation_xml_path
@@ -462,7 +456,7 @@ def run(annotation_xml_path):
         conll.write(f"-DOCSTART-\tO\n\n")
         for tokens, tags in zip(all_tokens, all_tags):
             for tok, tag in zip(tokens, tags):
-                conll.write(f"{tok}\t{str(tag)}\n")
+                conll.write(f"{moses_detokenize([tok])}\t{str(tag)}\n")
                 # logger.debug(f"{tok}\t{str(tag)}")
             conll.write("\n")
             # logger.debug("\n")
@@ -473,16 +467,20 @@ if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     tagged_folder_path = parser.docs_folder
     n_jobs = parser.cores
-
+    accept_errors = parser.accept_errors
+    # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
     # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
     annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
+    if accept_errors:
+        tqdm.write("BEWARE: The accept_errors flag is active. We will create CoNLL files even if the XML is faulty!")
     if n_jobs < 2:
         job_output = []
         for annotation_xml_path in tqdm(annotation_xml_paths):
-            job_output.append(run(annotation_xml_path))
+            job_output.append(run(annotation_xml_path, accept_errors=accept_errors))
     else:
         job_output = Parallel(n_jobs=n_jobs)(
-            delayed(run)(annotation_xml_path) for annotation_xml_path in tqdm(annotation_xml_paths))
+            delayed(run)(annotation_xml_path, accept_errors=accept_errors)
+            for annotation_xml_path in tqdm(annotation_xml_paths))
 
     # Get correctly processed paths
     processed_fine = [f"{c[1]}\n" for c in job_output if c[0] == 1]
