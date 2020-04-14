@@ -92,7 +92,8 @@ def print_errors(results_df: pd.DataFrame, type_error=None, window="single", ret
 
 def main(conll_file_path, output_results_path, type_error, window):
     # Load conll file
-    results_df = pd.read_csv(conll_file_path, delim_whitespace=True, names=["token", "true_tag", "pred_tag"], skip_blank_lines=False)
+    results_df = pd.read_csv(conll_file_path, delim_whitespace=True, names=["token", "true_tag", "pred_tag"],
+                             skip_blank_lines=False)
     y_true = results_df["true_tag"].dropna().values.tolist()
     y_pred = results_df["pred_tag"].dropna().values.tolist()
     results = print_results(y_true=y_true, y_pred=y_pred)
