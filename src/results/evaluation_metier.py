@@ -41,6 +41,8 @@ def main(evaluation_conll_path):
                                          (temp_df["true_tag"] != "O") &
                                          (temp_df["pred_tag"] != "O")])
 
+
+
         not_identified_df.loc[:, "errors"] = not_identified_df["token"] + " : " + \
                                              not_identified_df["true_tag"] + "," + not_identified_df["pred_tag"]
         miss_identified_df.loc[:, "errors"] = miss_identified_df["token"] + " : " + \
