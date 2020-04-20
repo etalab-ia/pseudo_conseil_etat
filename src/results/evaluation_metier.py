@@ -9,9 +9,10 @@ and predicted to be not an entity. For example, B-NOM predicted as O.
 * Miss anonymization is when an entity is marked as an entity by the hand annotated data (gold standard)
 and also predicted to be an entity, but of different type (O). For example, B-NOM predicted as B-PRENOM.
 
-The metric is thus the number of documents that contain at least one of said errors. A fourth and final error is
-the number of any kind of error (amongst the last three) at least once in a document. This is a more strict metric
-as it considers all possible errors.
+* A fourth and final error is the number of any kind of error (amongst the last three) at least once in a document.
+ This is a more strict metric as it considers all possible errors.
+The metric is thus the number of documents that contain at least one of said errors.
+
 
 The script takes one document with three columns, token, real tag, predicted tag
 Usage:
@@ -19,6 +20,8 @@ Usage:
 
 Arguments:
     <evaluation_conll_path>                    Evaluation CoNLL file (3 columns: token, real_tag, pred_tag)
+    --consider_over_in_total                   If passed, take into consideration the E_{over} error in the total error
+                                                computation
 '''
 from collections import defaultdict
 from itertools import groupby
@@ -28,7 +31,7 @@ from argopt import argopt
 import pandas as pd
 
 
-def main(evaluation_conll_path):
+def main(evaluation_conll_path, consider_over_in_total=False):
     df_evaluation = pd.read_csv(evaluation_conll_path, names=["token", "true_tag", "pred_tag"],
                                 delim_whitespace=True, engine="python",
                                 skip_blank_lines=False).fillna("")
@@ -48,8 +51,11 @@ def main(evaluation_conll_path):
         under_anonym_df = pd.DataFrame(temp_df[(temp_df["pred_tag"] == "O") & (temp_df["true_tag"] != "O")])
         over_anonym_df = pd.DataFrame(temp_df[(temp_df["true_tag"] == "O") & (temp_df["pred_tag"] != "O")])
         miss_anonym_df = pd.DataFrame(temp_df[(temp_df["true_tag"] != "O") & (temp_df["pred_tag"] != "O") & (temp_df["true_tag"] != temp_df["pred_tag"])])
-        all_anonym_ids = set(under_anonym_df.index.to_list() + over_anonym_df.index.to_list() +
-                            miss_anonym_df.index.to_list())
+        if not consider_over_in_total:
+            all_anonym_ids = set(under_anonym_df.index.to_list() + over_anonym_df.index.to_list() +
+                                miss_anonym_df.index.to_list())
+        else:
+            all_anonym_ids = set(under_anonym_df.index.to_list() + miss_anonym_df.index.to_list())
 
         under_anonym_df.loc[:, "errors"] = under_anonym_df["token"] + " : " + \
                                            under_anonym_df["true_tag"] + "," + under_anonym_df["pred_tag"]
@@ -98,8 +104,8 @@ def main(evaluation_conll_path):
 if __name__ == '__main__':
     parser = argopt(__doc__).parse_args()
     evaluation_conll_path = Path(parser.evaluation_conll_path)
-
-    all_results = main(evaluation_conll_path=evaluation_conll_path)
+    consider_over_in_total = parser.consider_over_in_total
+    all_results = main(evaluation_conll_path=evaluation_conll_path, consider_over_in_total=consider_over_in_total)
 
     under_anonym_error = all_results[0]
     over_anonym_error = all_results[1]

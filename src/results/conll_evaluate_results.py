@@ -33,7 +33,7 @@ def print_results(y_true, y_pred):
 
     labels = list(set(y_true))
     labels.pop(labels.index("O"))
-    labels = sorted(labels, key=lambda x: x[2]) + ["O"]
+    labels = sorted(labels, key=lambda x: (x[2:], x[0])) + ["O"]
 
     cm = print_confusion_matrix(y_true=y_true, y_pred=y_pred,
                                 labels=labels,

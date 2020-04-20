@@ -11,21 +11,14 @@ Arguments:
                                If "conll" save the document as a CoNLL file. "both" save it as both formats
 '''
 
-import copy
 import glob
 import os
-import random
 import re
 
-import pandas as pd
 from argopt import argopt
-from sacremoses import MosesDetokenizer
-import torch
 
-from flair.data import Corpus, Sentence
-from flair.datasets import ColumnDataset
+from flair.data import Sentence
 from flair.models import SequenceTagger
-from pathlib import Path
 
 from tqdm import tqdm
 
@@ -52,7 +45,6 @@ def main(text_file_path: str, model_folder: str, output_format: str) -> None:
     # load model
     tagger = SequenceTagger.load(model=os.path.join(model_folder, 'best-model.pt'))
 
-    file_sentences = []
     for file_ in tqdm(list_files):
         with open(file_, encoding="utf-8-sig") as text_file:
             sentences_predict = [Sentence(line.strip(), use_tokenizer=lambda x: moses_tokenize(x))

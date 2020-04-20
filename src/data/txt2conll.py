@@ -57,7 +57,7 @@ def run(annotated_txt_path):
               "w") as conll:
         for tokens in all_tokens:
             for tok in tokens:
-                conll.write(f"{tok}\n")
+                conll.write(f"{mdt.detokenize([tok])}\n")
             conll.write("\n")
 
     return 1, annotated_txt_path

@@ -470,7 +470,10 @@ if __name__ == '__main__':
     accept_errors = parser.accept_errors
     # annotation_xml_paths = ["../notebooks/decisions/343837.xml"]
     # annotation_xml_paths = ["/data/conseil_etat/decisions/IN/DCA/CAA54/2013/20131128/13NC00060.xml"]
-    annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
+    if os.path.isfile(tagged_folder_path):
+        annotation_xml_paths = [tagged_folder_path]
+    else:
+        annotation_xml_paths = glob.glob(tagged_folder_path + "/**/*.xml", recursive=True)
     if accept_errors:
         tqdm.write("BEWARE: The accept_errors flag is active. We will create CoNLL files even if the XML is faulty!")
     if n_jobs < 2:
