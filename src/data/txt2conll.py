@@ -15,7 +15,7 @@ import re
 
 from argopt import argopt
 from joblib import Parallel, delayed
-from sacremoses import MosesTokenizer, MosesPunctNormalizer
+from sacremoses import MosesTokenizer, MosesPunctNormalizer, MosesDetokenizer
 from tqdm import tqdm
 
 # logging.basicConfig(filename='./logs/normal_doc2conll.log', filemode='w',
@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 mt = MosesTokenizer(lang="fr")
 mpn = MosesPunctNormalizer(lang="fr")
-
+mdt = MosesDetokenizer(lang="fr")
 
 def tokenize(phrase):
     phrase = mpn.normalize(phrase)
