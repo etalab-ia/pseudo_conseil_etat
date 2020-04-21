@@ -59,8 +59,8 @@ embedding_types: List[TokenEmbeddings] = [
     # CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
-    # PooledFlairEmbeddings('fr-forward'),
-    # FlairEmbeddings('fr-backward'),
+    FlairEmbeddings('fr-forward'),
+    FlairEmbeddings('fr-backward'),
 
     # bert embeddings
     # BertEmbeddings('bert-base-multilingual-cased')
@@ -95,7 +95,9 @@ trainer.train(output_folder,
               learning_rate=0.1,
               mini_batch_size=8,
               max_epochs=5,
+              use_amp=True,
               embeddings_storage_mode="gpu")
+
 monitor.stop()
 # 8. plot weight traces (optional)
 # from flair.visual.training_curves import Plotter
