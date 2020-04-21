@@ -5,15 +5,15 @@ distribution of tags stratified (same proportion in each split).
 
 
 Usage:
-    split_dataset.py <conll_folder> <train_dev_test_folder> [options]
+    create_dataset.py <conll_folder> <train_dev_test_folder> [options]
 
 Arguments:
     <conll_folder>                     Folder path with the CoNLL annotation files
     <train_dev_test_folder>            Folder path to store the CoNLL created dataset
     --nb_min_class=<t> MiNCLASS        Min number of examples of a given class : ex. "B-LOC,2000"
                                        If zero, generate random sample (default: None)
-    --number_decisions=<n> DEC         Number of decisions to use (default: None)
-    --split_ratio=<s> RATIO            Split ratio of the generated traon,dev,test dataset [default: "80,10,10":str]
+    --number_decisions=<n> DEC         Number of decisions to use [default: None:int]
+    --split_ratio=<s> RATIO            Split ratio of the generated train,dev,test dataset [default: "80,10,10":str]
     --skip_files_list=<z> SKIP         Skip the files inside the passed text file (one doc path per line) when creating the train set (default: None)
 
 '''
