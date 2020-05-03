@@ -11,7 +11,6 @@ Arguments:
 import glob
 import logging
 import os
-import re
 
 from argopt import argopt
 from joblib import Parallel, delayed
@@ -27,7 +26,7 @@ mdt = MosesDetokenizer(lang="fr")
 
 def tokenize(phrase):
     phrase = mpn.normalize(phrase)
-    tokens = mt.penn_tokenize(phrase)
+    tokens = mt.tokenize(phrase)
     return tokens
 
 
