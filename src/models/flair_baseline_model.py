@@ -53,14 +53,14 @@ print(tag_dictionary.idx2item)
 # 4. initialize embeddings
 embedding_types: List[TokenEmbeddings] = [
 
-    WordEmbeddings('fr'),
-
+    # WordEmbeddings('fr'),
+    WordEmbeddings("/data/embeddings/doctrine/doctine_gensim_embeddings.gensim"),
     # comment in this line to use character embeddings
     # CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
-    FlairEmbeddings('fr-forward'),
-    FlairEmbeddings('fr-backward'),
+    # FlairEmbeddings('fr-forward'),
+    # FlairEmbeddings('fr-backward'),
 
     # bert embeddings
     # BertEmbeddings('bert-base-multilingual-cased')
@@ -95,8 +95,8 @@ trainer.train(output_folder,
               learning_rate=0.1,
               mini_batch_size=8,
               max_epochs=5,
-              use_amp=True,
-              embeddings_storage_mode="gpu")
+              use_amp=False,
+              embeddings_storage_mode="cpu")
 
 monitor.stop()
 # 8. plot weight traces (optional)
