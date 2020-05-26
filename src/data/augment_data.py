@@ -31,14 +31,20 @@ def run(doc_path: Path):
 
     df_sequences: List = split_sequences(dataset_df=dataset_df)
     augmented_df_sequences = []
-    for i, sequence_df in enumerate(df_sequences):
+    for i, (is_not_annotated, sequence_df) in tqdm(enumerate(df_sequences)):
+        temp_df = sequence_df
+        if is_not_annotated:
+            temp_df = modify_title_case(temp_df)
+            temp_df = random_case_modification(temp_df)
+            temp_df = remove_context(temp_df)
 
-        temp_df = modify_title_case(sequence_df)
-        temp_df = random_case_modification(sequence_df)
-        temp_df = remove_context(sequence_df)
-        
+        temp_df = temp_df.append(pd.DataFrame([["", ""]], columns=["token", "tag"]))
+        augmented_df_sequences.append(temp_df)
+
+
     output_path = doc_path.as_posix()[:-4] + "_augmented.txt"
-    save_conll_df(df_sequences, output_path)
+    final_pdf = pd.concat(augmented_df_sequences)
+    save_conll_df(final_pdf, output_path)
     return 1
 
 
@@ -91,9 +97,15 @@ def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_mod
             sequence_df.loc[i, "token"] = chosen_case_modif(sequence_df.loc[i, "token"])
     return sequence_df
 
-def split_sequences(dataset_df: pd.DataFrame):
+
+def split_sequences(dataset_df: pd.DataFrame, remove_non_annotated=True):
     df_list = np.split(dataset_df, dataset_df[dataset_df.isnull().all(1)].index)
-    df_list = [df.drop(df.index[[0]]) for df in df_list if not all(df["tag"].fillna("O").values == "O")]
+    sequence_list = []
+
+    for df in df_list:
+        sequence_not_annotated = all(df["tag"].fillna("O").values == "O")
+        sequence_list.append((sequence_not_annotated, df.drop(df.index[[0]])))
+
     return df_list
 
 
