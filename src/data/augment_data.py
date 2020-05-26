@@ -11,6 +11,7 @@ Arguments:
 import logging
 from glob import glob
 from pathlib import Path
+from typing import List
 
 from argopt import argopt
 from joblib import Parallel, delayed
@@ -24,15 +25,28 @@ CASE_FUNCS = [str.lower, str.upper, str.title, str.capitalize,
               str.swapcase, str.casefold]
 
 
-def run(doc_path):
+def run(doc_path: Path):
     dataset_df = pd.read_csv(doc_path, delim_whitespace=True, skip_blank_lines=False,
                              names=["token", "tag"])
 
-    df_sequences = split_sequences(dataset_df=dataset_df)
-    # modify_title_case(df_sequences[0])
-    # random_case_modification(df_sequences[0])
-    remove_context(df_sequences[0])
+    df_sequences: List = split_sequences(dataset_df=dataset_df)
+    augmented_df_sequences = []
+    for i, sequence_df in enumerate(df_sequences):
+
+        temp_df = modify_title_case(sequence_df)
+        temp_df = random_case_modification(sequence_df)
+        temp_df = remove_context(sequence_df)
+        
+    output_path = doc_path.as_posix()[:-4] + "_augmented.txt"
+    save_conll_df(df_sequences, output_path)
     return 1
+
+
+def save_conll_df(df: pd.DataFrame, path: Path):
+    df.to_csv(path, header=None, index=None, sep="\t")
+
+
+
 
 
 def remove_context(sequence_df: pd.DataFrame, tag=None, prob_remove=0.5):
@@ -58,13 +72,13 @@ def remove_context(sequence_df: pd.DataFrame, tag=None, prob_remove=0.5):
     to_modify_ids = np.intersect1d(to_modify_ids, non_annotated_rows)  # only remove those non-entity words
 
     for i in to_modify_ids:
-        sequence_df.drop(sequence_df.index[[i]])
-
+        sequence_df = sequence_df.drop(i)
+    return sequence_df
 
 def modify_title_case(sequence_df: pd.DataFrame):
     annotated_rows = sequence_df[sequence_df["tag"] != "O"].index
     sequence_df.loc[annotated_rows, "token"] = sequence_df.loc[annotated_rows, "token"].str.title()
-
+    return sequence_df
 
 def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_modif=0.5):
     if level == "entity":  # modify only the tokens of an entity
@@ -75,7 +89,7 @@ def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_mod
         if random.random() <= prob_modif:
             chosen_case_modif = random.choice(CASE_FUNCS)
             sequence_df.loc[i, "token"] = chosen_case_modif(sequence_df.loc[i, "token"])
-
+    return sequence_df
 
 def split_sequences(dataset_df: pd.DataFrame):
     df_list = np.split(dataset_df, dataset_df[dataset_df.isnull().all(1)].index)
