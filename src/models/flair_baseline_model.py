@@ -97,7 +97,7 @@ trainer.train(output_folder,
               mini_batch_size=8,
               max_epochs=5,
               use_amp=False,
-              embeddings_storage_mode="cpu")
+              embeddings_storage_mode="gpu")
 
 monitor.stop()
 # 8. plot weight traces (optional)
