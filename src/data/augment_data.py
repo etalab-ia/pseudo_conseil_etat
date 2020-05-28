@@ -21,8 +21,7 @@ import numpy as np
 import random
 
 random.seed(42)
-CASE_FUNCS = [str.lower, str.upper, str.title, str.capitalize,
-              str.swapcase, str.casefold]
+CASE_FUNCS = [str.lower, str.upper, str.title, str.capitalize, str.casefold]
 
 
 def run(doc_path: Path):
@@ -33,14 +32,13 @@ def run(doc_path: Path):
     augmented_df_sequences = []
     for i, (is_not_annotated, sequence_df) in tqdm(enumerate(df_sequences)):
         temp_df = sequence_df
-        if is_not_annotated:
-            temp_df = modify_title_case(temp_df)
-            temp_df = random_case_modification(temp_df)
-            temp_df = remove_context(temp_df)
+        if not is_not_annotated:
+            temp_df = modify_title_case(temp_df, tag="PER_PRENOM")
+            temp_df = random_case_modification(temp_df, level="entity", prob_modif=0.3)
+            temp_df = remove_context(temp_df, tag="PER_PRENOM", prob_remove=0.3)
 
         temp_df = temp_df.append(pd.DataFrame([["", ""]], columns=["token", "tag"]))
         augmented_df_sequences.append(temp_df)
-
 
     output_path = doc_path.as_posix()[:-4] + "_augmented.txt"
     final_pdf = pd.concat(augmented_df_sequences)
@@ -52,10 +50,7 @@ def save_conll_df(df: pd.DataFrame, path: Path):
     df.to_csv(path, header=None, index=None, sep="\t")
 
 
-
-
-
-def remove_context(sequence_df: pd.DataFrame, tag=None, prob_remove=0.5):
+def remove_context(sequence_df: pd.DataFrame, tag="all", prob_remove=0.7):
     """
     Remove the previous word occurring before an entity
     Parameters
@@ -69,9 +64,9 @@ def remove_context(sequence_df: pd.DataFrame, tag=None, prob_remove=0.5):
 
     """
 
-    if tag:
-        annotated_rows = sequence_df[sequence_df["tag"] == tag].index
-    else:  # we treat all
+    if tag != "all":
+        annotated_rows = sequence_df[sequence_df["tag"].str.contains(tag)].index
+    else:  # we treat all tags
         annotated_rows = sequence_df[sequence_df["tag"] != "O"].index
     non_annotated_rows = sequence_df[~sequence_df.index.isin(annotated_rows)].index
     to_modify_ids = [i - 1 for i in annotated_rows if random.random() < prob_remove]
@@ -81,12 +76,18 @@ def remove_context(sequence_df: pd.DataFrame, tag=None, prob_remove=0.5):
         sequence_df = sequence_df.drop(i)
     return sequence_df
 
-def modify_title_case(sequence_df: pd.DataFrame):
-    annotated_rows = sequence_df[sequence_df["tag"] != "O"].index
+
+def modify_title_case(sequence_df: pd.DataFrame, tag: str="all"):
+    if tag != "all":
+        annotated_rows = sequence_df[sequence_df["tag"].str.contains(tag)].index
+    else:  # we treat all tags
+        annotated_rows = sequence_df[sequence_df["tag"] != "O"].index
+
     sequence_df.loc[annotated_rows, "token"] = sequence_df.loc[annotated_rows, "token"].str.title()
     return sequence_df
 
-def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_modif=0.5):
+
+def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_modif=0.7):
     if level == "entity":  # modify only the tokens of an entity
         annotated_rows = sequence_df[sequence_df["tag"] != "O"].index
     else:
@@ -98,15 +99,17 @@ def random_case_modification(sequence_df: pd.DataFrame, level="entity", prob_mod
     return sequence_df
 
 
-def split_sequences(dataset_df: pd.DataFrame, remove_non_annotated=True):
+def split_sequences(dataset_df: pd.DataFrame):
     df_list = np.split(dataset_df, dataset_df[dataset_df.isnull().all(1)].index)
     sequence_list = []
 
     for df in df_list:
         sequence_not_annotated = all(df["tag"].fillna("O").values == "O")
-        sequence_list.append((sequence_not_annotated, df.drop(df.index[[0]])))
+        if len(df) > 1:  # only if there is more than one row
+            df = df.drop(df.index[[0]])  # drop the empty space
+        sequence_list.append((sequence_not_annotated, df))
 
-    return df_list
+    return sequence_list
 
 
 def main(doc_files_path: Path, n_jobs: int):

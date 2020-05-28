@@ -81,7 +81,8 @@ tagger: SequenceTagger = SequenceTagger(hidden_size=100,
                                         embeddings=embeddings,
                                         tag_dictionary=tag_dictionary,
                                         tag_type=tag_type,
-                                        rnn_layers=1,
+                                        rnn_layers=2,
+                                        dropout=0.5,
                                         use_crf=True,
                                         )
 
