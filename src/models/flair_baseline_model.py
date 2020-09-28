@@ -17,7 +17,7 @@ import flair
 import sys
 
 if len(sys.argv) < 3:
-    print("Usage: Pleas give the name of the folder containing the train, dev, test sets and the output folder")
+    print("Usage: Please give the name of the folder containing the train, dev, test sets and the output folder")
     exit(0)
 
 data_folder = sys.argv[1]
@@ -37,8 +37,6 @@ def create_flair_corpus(data_folder):
     return corpus
 
 # 1. get the corpus
-# data_folder = '/gpfswork/rech/elz/uzf35gs/pseudo_conseil_etat/data/69_8_10/'
-
 corpus: Corpus = create_flair_corpus(data_folder)
 print(corpus)
 
@@ -56,7 +54,7 @@ embedding_types: List[TokenEmbeddings] = [
     # WordEmbeddings('fr'),
     WordEmbeddings("/data/embeddings/doctrine/doctine_gensim_embeddings.gensim"),
     # comment in this line to use character embeddings
-    # CharacterEmbeddings(),
+    CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
     # FlairEmbeddings('fr-forward'),
@@ -88,10 +86,11 @@ tagger: SequenceTagger = SequenceTagger(hidden_size=100,
 
 # 6. initialize trainer
 from flair.trainers import ModelTrainer
-
-trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+from torch.optim.adam import Adam
+trainer: ModelTrainer = ModelTrainer(tagger, corpus, optimizer=Adam)
 trainer.num_workers = 8
 # 7. start training
+
 trainer.train(output_folder,
               learning_rate=0.1,
               mini_batch_size=8,

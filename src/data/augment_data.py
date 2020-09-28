@@ -1,5 +1,6 @@
 '''
 Script to augment the training dataset
+Inspired on https://github.com/ELS-RD/anonymisation/ data augmentation techniques
 
 Usage:
     augment_data.py <training_data_conll> [options]

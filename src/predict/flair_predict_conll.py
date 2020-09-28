@@ -22,7 +22,6 @@ from argopt import argopt
 from sacremoses import MosesDetokenizer
 import torch
 
-from src.results.confusion_matrix_pretty_print import print_confusion_matrix
 from src.results.conll_evaluate_results import print_errors, print_results
 
 torch.manual_seed(42)
@@ -31,8 +30,7 @@ torch.backends.cudnn.benchmark = False
 import numpy as np
 
 np.random.seed(0)
-from flair.data import Corpus, Sentence
-from flair.datasets import DataLoader, ColumnDataset
+from flair.datasets import ColumnDataset
 from flair.models import SequenceTagger
 from pathlib import Path
 

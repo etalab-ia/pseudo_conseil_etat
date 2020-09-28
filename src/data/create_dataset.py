@@ -14,7 +14,7 @@ Arguments:
                                        If zero, generate random sample (default: None)
     --number_decisions=<n> DEC         Number of decisions to use [default: None:int]
     --split_ratio=<s> RATIO            Split ratio of the generated train,dev,test dataset [default: "80,10,10":str]
-    --skip_files_list=<z> SKIP         Skip the files inside the passed text file (one doc path per line) when creating the train set (default: None)
+    --skip_files_list=<z> SKIP         The path of a file (one doc path per line) to skip when creating the train set (default: None)
 
 '''
 import glob
@@ -153,8 +153,8 @@ if __name__ == '__main__':
         print(f"After skipping the files in {skip_file} (with {len(files_to_skip)} files inside). "
               f"We are left with {len(annotation_conll_paths)} documents.")
 
-    sample_paths = shuffle(annotation_conll_paths)
-
+    shuffle(annotation_conll_paths)
+    sample_paths = annotation_conll_paths
     file_tag_counts, tag_file_counts, counts = count_tags(annotation_conll_paths)
     print(f"Tags distribution of sampled corpus ({len(annotation_conll_paths)} documents) : {counts}")
 
@@ -164,7 +164,7 @@ if __name__ == '__main__':
             sample_paths = sample(annotation_conll_paths, sampled_number_decisions)
 
         else:
-            print("You chose to sample more documents that there are available. I am going to give you the whole    "
+            print("You chose to sample more documents than those available. I am going to give you the whole "
                   "population of documents.")
 
     elif nb_min_class:

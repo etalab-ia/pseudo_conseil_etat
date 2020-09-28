@@ -4,7 +4,7 @@ import sys
 
 from tqdm import tqdm
 
-"The docs annotated by MM where missing the closing tag. We fix that here"
+"The docs annotated by M Martinie where missing the closing tag. We fix that here"
 if len(sys.argv) < 3:
     print("You need to pass a folder with the text files to fix and whether these files are annotated or not")
     exit(1)
