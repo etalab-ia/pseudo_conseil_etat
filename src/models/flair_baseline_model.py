@@ -37,8 +37,6 @@ def create_flair_corpus(data_folder):
     return corpus
 
 # 1. get the corpus
-# data_folder = '/gpfswork/rech/elz/uzf35gs/pseudo_conseil_etat/data/69_8_10/'
-
 corpus: Corpus = create_flair_corpus(data_folder)
 print(corpus)
 
